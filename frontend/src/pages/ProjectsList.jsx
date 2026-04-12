@@ -1,46 +1,75 @@
+import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-
-// بيانات وهمية مؤقتة — لاحقاً بتيجي من الـ API
-const mockProjects = [
-  { id: 1, name: 'مطعم الشام', businessType: 'مطعم / كافيه', description: 'مطعم سوري في رام الله' },
-  { id: 2, name: 'متجر إلكتروني', businessType: 'تجارة إلكترونية', description: 'بيع منتجات يدوية' },
-]
 
 function ProjectsList() {
   const navigate = useNavigate()
+  const [projects, setProjects] = useState([])
+
+  useEffect(() => {
+    const saved = JSON.parse(localStorage.getItem('projects') || '[]')
+    setProjects(saved)
+  }, [])
 
   return (
-    <div className="max-w-3xl mx-auto">
-      <div className="flex justify-between items-center mb-8">
-        <h1 className="text-2xl font-bold text-purple-400">مشاريعي</h1>
+    <div>
+      {/* Welcome Section */}
+      <div className="mb-8">
+        <h1 className="text-3xl font-bold text-gray-900">Welcome back, taima</h1>
+        <p className="text-gray-500 mt-1">Your AI strategy dashboard</p>
+      </div>
+
+      {/* CTA Banner */}
+      <div className="bg-[#1B4332] rounded-2xl p-6 flex justify-between items-center mb-8">
+        <div>
+          <p className="text-white font-bold text-xl">Generate New Strategy</p>
+          <p className="text-green-200 text-sm mt-1">Create a comprehensive business strategy report in minutes</p>
+        </div>
         <button
-         onClick={() => navigate(`/projects/${project.id}/select`)}
-          className="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg text-sm transition"
+          onClick={() => navigate('/projects/new')}
+          className="bg-white text-[#1B4332] font-semibold px-5 py-2 rounded-lg hover:bg-gray-100 transition"
         >
-          + مشروع جديد
+          + New Report
         </button>
       </div>
 
-      <div className="flex flex-col gap-4">
-        {mockProjects.map(project => (
-          <div
-            key={project.id}
-            className="bg-gray-900 border border-gray-800 rounded-xl p-5 flex justify-between items-center hover:border-purple-700 transition"
-          >
-            <div>
-              <h2 className="font-semibold text-white text-lg">{project.name}</h2>
-              <p className="text-gray-400 text-sm mt-1">{project.businessType}</p>
-              <p className="text-gray-500 text-sm mt-1">{project.description}</p>
-            </div>
-            <button
-              onClick={() => navigate(`/projects/${project.id}`)}
-              className="bg-gray-800 hover:bg-gray-700 text-white px-4 py-2 rounded-lg text-sm transition"
+      {/* Projects */}
+      {projects.length === 0 ? (
+        <div className="text-center text-gray-400 mt-20">
+          <p className="text-4xl mb-4">📁</p>
+          <p>No projects yet — create your first one!</p>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 gap-4">
+          {projects.map(project => (
+            <div
+              key={project.id}
+              className="bg-white border border-gray-200 rounded-xl p-5 flex justify-between items-center hover:border-[#2D6A4F] transition shadow-sm"
             >
-              فتح ←
-            </button>
-          </div>
-        ))}
-      </div>
+              <div>
+                <h2 className="font-semibold text-gray-900 text-lg">{project.name}</h2>
+                <p className="text-gray-400 text-sm mt-1">{project.businessType}</p>
+                <p className="text-gray-400 text-sm">{project.description}</p>
+              </div>
+              <div className="flex gap-2">
+  <button
+    onClick={() => navigate(`/projects/${project.id}/edit`)}
+    className="border border-gray-200 hover:border-[#1B4332] hover:text-[#1B4332] text-gray-500 px-4 py-2 rounded-lg text-sm transition"
+  >
+    Edit
+  </button>
+  <button
+    onClick={() => navigate(`/projects/${project.id}/select`)}
+    className="bg-[#1B4332] hover:bg-[#2D6A4F] text-white px-4 py-2 rounded-lg text-sm transition"
+  >
+    Open →
+  </button>
+</div>
+            </div>
+            
+            
+          ))}
+        </div>
+      )}
     </div>
   )
 }
