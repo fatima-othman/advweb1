@@ -6,7 +6,7 @@ const CreditsFeatureHeader = () => {
     <section className="credits-header-wrap">
       <div>
         <h1>StrategAI</h1>
-        <p>AI Business Strategy Generator</p>
+        <p>AI Business Strategy Generator</p> 
       </div>
 
       <nav className="credits-tabs" aria-label="Credits Tabs">
