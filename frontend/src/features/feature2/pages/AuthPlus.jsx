@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { ROUTES } from '../../config/routes';
+import { ROUTES } from '../../../config/routes';
 import '../styles/feature2.css';
 
 const AuthPlus = () => {
@@ -15,19 +15,19 @@ const AuthPlus = () => {
           <article className="card feature2-card">
             <h2>Forgot Password</h2>
             <p>Request a secure reset link by email.</p>
-            <Link className="btn-secondary" to={ROUTES.feature2ForgotPassword}>Open</Link>
+            <Link className="btn-secondary" to={ROUTES.forgotPassword}>Open</Link>
           </article>
 
           <article className="card feature2-card">
             <h2>Reset Password</h2>
             <p>Set a new password from the recovery flow.</p>
-            <Link className="btn-secondary" to={ROUTES.feature2ResetPassword}>Open</Link>
+            <Link className="btn-secondary" to={ROUTES.resetPassword}>Open</Link>
           </article>
 
           <article className="card feature2-card">
             <h2>Profile Settings</h2>
             <p>Update account details and workspace identity.</p>
-            <Link className="btn-secondary" to={ROUTES.feature2Profile}>Open</Link>
+            <Link className="btn-secondary" to={ROUTES.dashboard}>Open</Link>
           </article>
         </section>
       </div>

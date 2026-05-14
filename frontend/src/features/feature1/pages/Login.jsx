@@ -141,9 +141,9 @@ const Login = () => {
                   />
                   <span>Remember me</span>
                 </label>
-                <button type="button" className="auth-inline-link">
+                <Link to={ROUTES.forgotPassword} className="auth-inline-link">
                   Forgot password?
-                </button>
+                </Link>
               </div>
 
               <MotionButton

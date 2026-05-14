@@ -140,6 +140,9 @@ const DashboardCredits = () => {
             <p className="credits-hint">
               Saved payment method: {paymentMethodId ? 'Available' : 'Not found. Add one from Pricing page.'}
             </p>
+            <p className="credits-hint">
+              Select a recharge package first, then enable auto-recharge and save settings.
+            </p>
 
             <div style={{ display: 'grid', gap: '0.75rem', marginTop: '0.5rem' }}>
               <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
@@ -158,12 +161,12 @@ const DashboardCredits = () => {
                 className="input"
                 value={autoRechargePackageId}
                 onChange={(event) => setAutoRechargePackageId(event.target.value)}
-                disabled={!autoRechargeEnabled || loading}
+                disabled={loading}
               >
                 <option value="">Select package</option>
                 {packages.map((pkg) => (
                   <option key={pkg.id} value={pkg.id}>
-                    {pkg.name} ({pkg.credits} credits / ${Number(pkg.price).toFixed(2)})
+                    {pkg.name} ({pkg.credits} credits / {Number(pkg.price).toFixed(2)} ILS)
                   </option>
                 ))}
               </select>

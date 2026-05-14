@@ -20,7 +20,7 @@ const formatDate = (value) => {
 
 const formatAmount = (value) => {
   const numberValue = Number(value || 0);
-  return `$${numberValue.toFixed(2)}`;
+  return `${numberValue.toFixed(2)} ILS`;
 };
 
 const formatCredits = (value) => {

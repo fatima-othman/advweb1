@@ -22,14 +22,15 @@ const included = [
 ];
 
 const fallbackPlans = [
-  { id: 'starter-fallback', name: 'Starter', credits: 60, price: 9.99, isFallback: true },
-  { id: 'growth-fallback', name: 'Growth', credits: 180, price: 24.99, isFallback: true },
-  { id: 'pro-fallback', name: 'Pro', credits: 400, price: 49.0, isFallback: true },
+  { id: 'starter-fallback', name: 'Starter', credits: 70, price: 50.0, isFallback: true },
+  { id: 'growth-fallback', name: 'Growth', credits: 200, price: 120.0, isFallback: true },
+  { id: 'business-fallback', name: 'Business', credits: 500, price: 260.0, isFallback: true },
+  { id: 'enterprise-fallback', name: 'Enterprise', credits: 1200, price: 550.0, isFallback: true },
 ];
 
 const formatPrice = (value) => {
   const numberValue = Number(value || 0);
-  return `$${numberValue.toFixed(2)}`;
+  return `${numberValue.toFixed(2)} ILS`;
 };
 
 const CardSetupForm = ({ clientSecret, onSaved, onError }) => {
@@ -273,7 +274,7 @@ const DashboardPricing = () => {
                 >
                   {index === 1 ? <span className="pricing-badge">Best Value</span> : null}
                   <h3>{plan.name}</h3>
-                  <p className="pricing-subtitle">{plan.isFallback ? 'Select plan' : 'One-time purchase'}</p>
+                  <p className="pricing-subtitle">One-time purchase</p>
                   <p className="pricing-price">{formatPrice(plan.price)}</p>
                   <p className="pricing-credits">{plan.credits} credits</p>
                   <button

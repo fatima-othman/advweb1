@@ -148,7 +148,7 @@
 
 .pricing-grid {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(5, minmax(0, 1fr));
   gap: 1rem;
 }
 
@@ -342,7 +342,13 @@
   padding: 0.19rem 0.64rem;
 }
 
-@media (max-width: 1080px) {
+@media (max-width: 1280px) {
+  .pricing-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 900px) {
   .pricing-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }

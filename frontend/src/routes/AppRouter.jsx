@@ -8,10 +8,12 @@ import Dashboard from '../features/feature1/pages/Dashboard';
 import DashboardCredits from '../features/feature2/pages/DashboardCredits';
 import DashboardHistory from '../features/feature2/pages/DashboardHistory';
 import DashboardPricing from '../features/feature2/pages/DashboardPricing';
+import ForgotPassword from '../features/feature2/pages/ForgotPassword';
 import Home from '../features/feature1/pages/Home';
 import Login from '../features/feature1/pages/Login';
 import NotFound from '../features/feature1/pages/NotFound';
 import Register from '../features/feature1/pages/Register';
+import ResetPassword from '../features/feature2/pages/ResetPassword';
 
 const AppRouter = () => {
   const { isAuthenticated } = useAuth();
@@ -29,6 +31,14 @@ const AppRouter = () => {
           <Route
             path={ROUTES.login}
             element={isAuthenticated ? <Navigate to={ROUTES.dashboard} replace /> : <Login />}
+          />
+          <Route
+            path={ROUTES.forgotPassword}
+            element={isAuthenticated ? <Navigate to={ROUTES.dashboard} replace /> : <ForgotPassword />}
+          />
+          <Route
+            path={ROUTES.resetPassword}
+            element={isAuthenticated ? <Navigate to={ROUTES.dashboard} replace /> : <ResetPassword />}
           />
           <Route
             path={ROUTES.dashboard}

@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
-import { ROUTES } from '../../config/routes';
+import { ROUTES } from '../../../config/routes';
 import { submitPasswordReset } from '../services/feature2Service';
 import '../styles/feature2.css';
 
