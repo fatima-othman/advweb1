@@ -3,9 +3,17 @@
 use Illuminate\Support\Facades\Route;
 use Illuminate\Http\Request;
 use App\Models\Project;
+use App\Models\Report;
 
 Route::get('/projects', function () {
-    return Project::orderBy('id', 'asc')->get();
+    return Project::withCount('reports')
+        ->orderBy('id', 'asc')
+        ->get()
+        ->map(function ($project) {
+            $project->reports = $project->reports_count;
+            unset($project->reports_count);
+            return $project;
+        });
 });
 
 Route::post('/projects', function (Request $request) {
@@ -43,4 +51,8 @@ Route::delete('/projects/{project}', function (Project $project) {
     return response()->json([
         'message' => 'Project deleted successfully',
     ]);
+});
+
+Route::get('/reports', function () {
+    return Report::with('project')->orderBy('id', 'asc')->get();
 });

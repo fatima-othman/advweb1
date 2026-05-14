@@ -14,9 +14,9 @@ import ProjectsPage from "./pages/Feature 5/ProjectsPage";
 import BillingPage from "./pages/Feature 5/BillingPage";
 import SettingsPage from "./pages/Feature 5/SettingsPage";
 import DashboardLayout from "./layouts/DashboardLayout";
-import { reports } from "./data/reports";
 import TopActionBar from "./components/TopActionBar";
 import DashboardPage from "./pages/Feature 5/DashboardPage";
+import ReportHistoryPage from "./pages/Feature 5/ReportHistoryPage";
 
 
 
@@ -140,6 +140,7 @@ function App() {
     { label: "Branding", value: 86 },
   ];
   const [projects, setProjects] = useState([]);
+  const [reports, setReports] = useState([]);
 
 const fetchProjects = async () => {
   try {
@@ -149,9 +150,18 @@ const fetchProjects = async () => {
     console.log(error);
   }
 };
+const fetchReports = async () => {
+  try {
+    const response = await axios.get("http://127.0.0.1:8000/api/reports");
+    setReports(response.data);
+  } catch (error) {
+    console.log(error);
+  }
+};
 
 useEffect(() => {
   fetchProjects();
+  fetchReports();
 }, []);
   
 
@@ -673,260 +683,7 @@ useEffect(() => {
     );
   };
 
-  const ReportHistoryPage = () => (
-    <>
-      <TopActionBar
-  darkMode={darkMode}
-  showNotifications={showNotifications}
-  setShowNotifications={setShowNotifications}
-  unreadNotifications={unreadNotifications}
-  notifications={notifications}
-  mutedText={mutedText}
-  markAllNotificationsRead={markAllNotificationsRead}
-/>
-      <Breadcrumbs items={["Dashboard", "Report History"]} darkMode={darkMode} />
 
-      <SectionTitle
-        title="Report History"
-        subtitle="Browse reports, apply filters, open reports, or compare two reports from the same project"
-        darkMode={darkMode}
-        action={
-          <button
-            disabled={!canCompare}
-            onClick={() => {
-              if (canCompare) {
-                addNotification("Comparison completed", "Two reports are ready in the comparison view.");
-                navigate("/comparison");
-              }
-            }}
-            className={`px-5 py-3 rounded-xl text-white transition ${
-              canCompare
-                ? "bg-[#355872] hover:bg-[#7AAACE]"
-                : "bg-gray-300 cursor-not-allowed"
-            }`}
-          >
-            Compare Selected
-          </button>
-        }
-      />
-
-      <div className={`border rounded-2xl p-4 mb-6 shadow-sm ${panelBg}`}>
-        <div className="grid grid-cols-1 xl:grid-cols-5 gap-4">
-          <div className="xl:col-span-2 relative">
-            <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 text-lg">🔍</span>
-            <input
-              type="text"
-              placeholder="Search reports by name or project..."
-              value={reportSearch}
-              onChange={(e) => setReportSearch(e.target.value)}
-              className={`w-full rounded-xl border pl-12 pr-4 py-3 outline-none transition focus:border-[#355872] focus:ring-2 focus:ring-[#355872] ${
-                darkMode
-                  ? "bg-[#0F172A] border-gray-700 text-white placeholder:text-gray-400"
-                  : "bg-white border-gray-200 text-gray-900"
-              }`}
-            />
-          </div>
-
-          <select
-            value={reportSort}
-            onChange={(e) => setReportSort(e.target.value)}
-            className={`w-full rounded-xl border px-4 py-3 outline-none focus:ring-2 focus:ring-[#355872] ${
-              darkMode
-                ? "bg-[#0F172A] border-gray-700 text-white"
-                : "bg-white border-gray-200 text-gray-900"
-            }`}
-          >
-            <option value="date-desc">Sort: Newest</option>
-            <option value="date-asc">Sort: Oldest</option>
-            <option value="score-desc">Sort: Score High-Low</option>
-            <option value="score-asc">Sort: Score Low-High</option>
-            <option value="name-asc">Sort: Name A-Z</option>
-            <option value="name-desc">Sort: Name Z-A</option>
-          </select>
-
-          <button
-            onClick={clearReportFilters}
-            className={`rounded-xl border px-4 py-3 transition ${
-              darkMode
-                ? "border-gray-600 text-gray-100 hover:bg-gray-800"
-                : "border-gray-200 text-gray-700 hover:bg-gray-50"
-            }`}
-          >
-            Reset Filters
-          </button>
-
-          <div className={`rounded-xl px-4 py-3 text-sm flex items-center justify-center ${
-            darkMode ? "bg-[#0F172A] text-gray-200" : "bg-gray-50 text-gray-600"
-          }`}>
-            {sortedFilteredReports.length} reports found
-          </div>
-        </div>
-      </div>
-
-      <div className={`border rounded-2xl p-5 shadow-sm mb-6 ${panelBg}`}>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div>
-            <label className={`block text-sm font-medium mb-2 ${mutedText}`}>
-              Filter by Project
-            </label>
-            <select
-              value={projectFilter}
-              onChange={(e) => setProjectFilter(e.target.value)}
-              className={`w-full border rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-[#355872] ${
-                darkMode
-                  ? "bg-[#0F172A] border-gray-700 text-white"
-                  : "bg-white border-gray-200 text-gray-900"
-              }`}
-            >
-              <option value="all">All Projects</option>
-              {projects.map((project) => (
-                <option key={project.id} value={project.id}>
-                  {project.name}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          <div>
-            <label className={`block text-sm font-medium mb-2 ${mutedText}`}>
-              Filter by Type
-            </label>
-            <select
-              value={typeFilter}
-              onChange={(e) => setTypeFilter(e.target.value)}
-              className={`w-full border rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-[#355872] ${
-                darkMode
-                  ? "bg-[#0F172A] border-gray-700 text-white"
-                  : "bg-white border-gray-200 text-gray-900"
-              }`}
-            >
-              <option value="all">All Types</option>
-              <option value="Growth">Growth</option>
-              <option value="Pricing">Pricing</option>
-              <option value="Marketing">Marketing</option>
-              <option value="Expansion">Expansion</option>
-              <option value="Branding">Branding</option>
-            </select>
-          </div>
-
-          <div>
-            <label className={`block text-sm font-medium mb-2 ${mutedText}`}>
-              Filter by Date
-            </label>
-            <select
-              value={dateFilter}
-              onChange={(e) => setDateFilter(e.target.value)}
-              className={`w-full border rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-[#355872] ${
-                darkMode
-                  ? "bg-[#0F172A] border-gray-700 text-white"
-                  : "bg-white border-gray-200 text-gray-900"
-              }`}
-            >
-              <option value="">All Dates</option>
-              {[...new Set(reports.map((report) => report.date))].map((date) => (
-                <option key={date} value={date}>
-                  {date}
-                </option>
-              ))}
-            </select>
-          </div>
-        </div>
-      </div>
-
-      <div className={`border rounded-2xl shadow-sm overflow-hidden ${panelBg}`}>
-        <div className={`grid grid-cols-9 gap-4 px-6 py-4 border-b text-sm font-semibold ${
-          darkMode
-            ? "border-gray-700 text-gray-300 bg-[#0F172A]"
-            : "border-gray-200 text-gray-500 bg-[#F7F8F0]"
-        }`}>
-          <div className="col-span-2">Report Name</div>
-          <div>Project</div>
-          <div>Type</div>
-          <div>Date</div>
-          <div>Sections</div>
-          <div>Status</div>
-          <div>Open</div>
-          <div className="text-center">Compare</div>
-        </div>
-
-        {sortedFilteredReports.map((report) => {
-          const status = getReportStatus(report.score);
-
-          return (
-            <div
-              key={report.id}
-              className={`grid grid-cols-9 gap-4 px-6 py-4 border-b last:border-b-0 items-center text-sm ${
-                darkMode ? "border-gray-700" : "border-gray-100"
-              }`}
-            >
-              <div className={`col-span-2 font-medium ${darkMode ? "text-white" : "text-gray-800"}`}>
-                <SearchHighlight text={report.name} query={reportSearch} darkMode={darkMode} />
-              </div>
-              <div className={mutedText}>
-                <SearchHighlight text={report.project} query={reportSearch} darkMode={darkMode} />
-              </div>
-              <div className={mutedText}>{report.type}</div>
-              <div className={mutedText}>{report.date}</div>
-              <div className={mutedText}>{report.sections}</div>
-              <div>
-                <StatusBadge label={status.label} darkMode={darkMode} variant={status.variant} />
-              </div>
-
-              <div>
-                <button
-                  onClick={() => {
-                    setSelectedReport(report);
-                    addRecentItem({
-                      type: "report",
-                      title: report.name,
-                      subtitle: `${report.project} • ${report.type}`,
-                    });
-                    navigate("/report-details");
-                  }}
-                  className={`px-3 py-2 rounded-lg border text-sm transition ${
-                    darkMode
-                      ? "border-gray-600 text-gray-100 hover:bg-gray-800"
-                      : "border-gray-200 hover:bg-gray-50"
-                  }`}
-                >
-                  Open
-                </button>
-              </div>
-
-              <div className="text-center">
-                <input
-                  type="checkbox"
-                  checked={selectedReports.includes(report.id)}
-                  onChange={() => toggleReportSelection(report.id, report.projectId)}
-                  className="h-4 w-4 accent-[#355872]"
-                />
-              </div>
-            </div>
-          );
-        })}
-
-        {sortedFilteredReports.length === 0 && (
-          <div className={`px-6 py-12 text-center ${mutedText}`}>
-            <div className="text-4xl mb-3">📄</div>
-            <h3 className={`text-xl font-semibold mb-2 ${darkMode ? "text-white" : "text-gray-900"}`}>
-              No reports match your filters
-            </h3>
-            <p>Try another search or reset all filters.</p>
-            <button
-              onClick={clearReportFilters}
-              className="mt-5 bg-[#355872] hover:bg-[#7AAACE] text-white px-5 py-3 rounded-xl transition"
-            >
-              Reset Filters
-            </button>
-          </div>
-        )}
-      </div>
-
-      <p className={`text-sm mt-4 ${mutedText}`}>
-        Select up to 2 reports from the same project to compare.
-      </p>
-    </>
-  );
 
   const ComparisonPage = () => {
     const [first, second] = selectedReportObjects;
@@ -1151,7 +908,43 @@ useEffect(() => {
 
     <Route path="/project-details" element={<ProjectDetailsPage />} />
     <Route path="/report-details" element={<ReportDetailsPage />} />
-    <Route path="/history" element={<ReportHistoryPage />} />
+    <Route
+  path="/history"
+  element={
+    <ReportHistoryPage
+      darkMode={darkMode}
+      showNotifications={showNotifications}
+      setShowNotifications={setShowNotifications}
+      unreadNotifications={unreadNotifications}
+      notifications={notifications}
+      mutedText={mutedText}
+      markAllNotificationsRead={markAllNotificationsRead}
+      panelBg={panelBg}
+      reports={reports}
+      projects={projects}
+      reportSearch={reportSearch}
+      setReportSearch={setReportSearch}
+      reportSort={reportSort}
+      setReportSort={setReportSort}
+      projectFilter={projectFilter}
+      setProjectFilter={setProjectFilter}
+      typeFilter={typeFilter}
+      setTypeFilter={setTypeFilter}
+      dateFilter={dateFilter}
+      setDateFilter={setDateFilter}
+      sortedFilteredReports={sortedFilteredReports}
+      clearReportFilters={clearReportFilters}
+      selectedReports={selectedReports}
+      toggleReportSelection={toggleReportSelection}
+      canCompare={canCompare}
+      addNotification={addNotification}
+      navigate={navigate}
+      setSelectedReport={setSelectedReport}
+      addRecentItem={addRecentItem}
+      getReportStatus={getReportStatus}
+    />
+  }
+/>
     <Route path="/comparison" element={<ComparisonPage />} />
 
     <Route
