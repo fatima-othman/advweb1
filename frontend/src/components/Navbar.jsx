@@ -1,8 +1,8 @@
 ﻿import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
-import { Link, NavLink, useLocation, useNavigate } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import LoadingSpinner from './LoadingSpinner';
-import { NAV_LINKS, ROUTES } from '../config/routes';
+import { ROUTES } from '../config/routes';
 import { useAuth } from '../context/AuthContext';
 import '../styles/navbar.css';
 
@@ -83,32 +83,16 @@ const Icon = ({ name }) => {
   );
 };
 
-const iconByPath = {
-  [ROUTES.login]: 'login',
-  [ROUTES.dashboard]: 'dashboard',
-  [ROUTES.dashboardCredits]: 'credits',
-  [ROUTES.feature2Home]: 'feature2',
-};
-
 const Navbar = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { isAuthenticated, logout, user } = useAuth();
+  const { isAuthenticated, logout } = useAuth();
 
   const [isScrolled, setIsScrolled] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
 
-  const links = isAuthenticated ? NAV_LINKS.private : NAV_LINKS.public;
   const isAuthScreen = location.pathname === ROUTES.login || location.pathname === ROUTES.register;
-  const isDashboardArea = isAuthenticated && location.pathname.startsWith('/dashboard');
-
-  const dashboardTabs = [
-    { label: 'Dashboard', to: ROUTES.dashboard, icon: 'dashboard' },
-    { label: 'Overview', to: ROUTES.dashboardCredits, icon: 'overview' },
-    { label: 'Pricing', to: ROUTES.dashboardPricing, icon: 'pricing' },
-    { label: 'History', to: ROUTES.dashboardHistory, icon: 'history' },
-  ];
 
   useEffect(() => {
     const onScroll = () => {
@@ -166,42 +150,16 @@ const Navbar = () => {
               animate={{ opacity: 1 }}
               transition={{ duration: 0.15 }}
             >
-              {!isDashboardArea ? (
-                links.map((item) => (
-                  <NavLink key={item.to} to={item.to} className="nav-link">
-                    {iconByPath[item.to] ? (
-                      <span className="nav-icon"><Icon name={iconByPath[item.to]} /></span>
-                    ) : null}
-                    {item.label}
-                  </NavLink>
-                ))
-              ) : (
-                <div className="dashboard-nav-links">
-                  {dashboardTabs.map((item) => (
-                    <NavLink key={item.to} to={item.to} className="nav-link">
-                      <span className="nav-icon"><Icon name={item.icon} /></span>
-                      {item.label}
-                    </NavLink>
-                  ))}
-                </div>
-              )}
+              <Link to={ROUTES.register} className="btn-primary nav-cta">
+                Get started
+              </Link>
 
-              {!isAuthenticated ? (
-                <Link to={ROUTES.register} className="btn-primary nav-cta">
-                  Get started
-                </Link>
-              ) : (
+              {isAuthenticated ? (
                 <div className="navbar-auth-area">
-                  {isDashboardArea ? (
-                    <div className="navbar-user">
-                      <strong>{user?.name || 'Demo User'}</strong>
-                      <span>{user?.email || 'demo@strategai.com'}</span>
-                    </div>
-                  ) : null}
                   <button
                     type="button"
                     onClick={handleLogout}
-                    className={isDashboardArea ? 'navbar-logout-icon' : 'btn-secondary nav-cta-btn'}
+                    className="btn-secondary nav-cta-btn"
                     aria-label="Logout"
                     title="Logout"
                     disabled={isLoggingOut}
@@ -209,11 +167,16 @@ const Navbar = () => {
                     {isLoggingOut ? <LoadingSpinner label="" small /> : (
                       <>
                         <span className="nav-icon"><Icon name="logout" /></span>
-                        {!isDashboardArea ? 'Logout' : null}
+                        Logout
                       </>
                     )}
                   </button>
                 </div>
+              ) : (
+                <Link to={ROUTES.login} className="btn-secondary nav-cta-btn">
+                  <span className="nav-icon"><Icon name="login" /></span>
+                  Log in
+                </Link>
               )}
             </MotionNav>
           </>
