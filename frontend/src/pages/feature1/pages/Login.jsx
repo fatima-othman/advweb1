@@ -7,6 +7,8 @@ import PageMotion from '../../../components/PageMotion';
 import PasswordField from '../../../components/PasswordField';
 import { ROUTES } from '../../../config/routes';
 import { useAuth } from '../../../context/AuthContext';
+import { API_BASE_URL } from '../../../services/api';
+import { storeAdminSession } from '../../../lib/adminAuth';
 import { validateLoginField, validateLoginForm } from '../../../utils/validators';
 import '../styles/auth.css';
 
@@ -109,6 +111,40 @@ const Login = () => {
     setErrors({});
 
     try {
+      const adminEmail = import.meta.env.VITE_ADMIN_EMAIL || 'admin@strategai.com';
+
+      if (formData.email.trim().toLowerCase() === adminEmail.toLowerCase()) {
+        const adminResponse = await fetch(`${API_BASE_URL}/admin/login`, {
+          method: 'POST',
+          headers: {
+            Accept: 'application/json',
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            email: formData.email,
+            password: formData.password,
+            remember: rememberMe,
+          }),
+        });
+
+        const adminPayload = await adminResponse.json();
+
+        if (!adminResponse.ok) {
+          throw {
+            message: adminPayload?.message || adminPayload?.errors?.email?.[0] || 'Admin login failed.',
+            fieldErrors: {},
+          };
+        }
+
+        storeAdminSession({
+          token: adminPayload.token,
+          user: adminPayload.user,
+        });
+
+        navigate('/admin', { replace: true });
+        return;
+      }
+
       await login(formData);
       setSuccessMessage('Login successful. Redirecting to your dashboard...');
       const destination = location.state?.from?.pathname || ROUTES.dashboard;

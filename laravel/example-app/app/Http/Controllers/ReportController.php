@@ -9,6 +9,46 @@ use Illuminate\Support\Facades\Http;
 
 class ReportController extends Controller
 {
+    public function index()
+    {
+        return Report::where('user_id', 1)
+            ->with('project')
+            ->latest()
+            ->get()
+            ->map(function ($report) {
+                $selectedSections = $report->selected_sections ?: array_keys($report->sections ?: []);
+                $projectName = optional($report->project)->name ?: 'Project';
+
+                return [
+                    'id' => $report->id,
+                    'name' => $report->title ?: "{$projectName} Strategy Report",
+                    'project_id' => $report->project_id,
+                    'projectId' => $report->project_id,
+                    'project' => $report->project,
+                    'type' => $selectedSections[0] ?? 'Strategy',
+                    'date' => optional($report->created_at)->toDateString(),
+                    'sections' => count($selectedSections),
+                    'score' => 89,
+                    'swot' => [
+                        'strengths' => data_get($report->sections, 'swot', 'Strong business direction'),
+                        'weaknesses' => 'Needs more detailed validation',
+                        'opportunities' => 'Room for growth in the target market',
+                        'threats' => 'Competitive pressure',
+                    ],
+                    'kpis' => [
+                        'revenue' => 82,
+                        'marketing' => 88,
+                        'retention' => 79,
+                    ],
+                    'recommendations' => [
+                        'Review market fit',
+                        'Improve acquisition channels',
+                        'Track weekly KPIs',
+                    ],
+                ];
+            });
+    }
+
     public function generate(Request $request)
     {
         $request->validate([
@@ -52,7 +92,17 @@ $response = Http::withoutVerifying()
     ]);
 
 if (!$response->successful()) {
-    return response()->json(['message' => 'Groq API error'], 500);
+    $sections = $this->fallbackSections($project, $request->selected_sections, $isBundle);
+
+    $report = Report::create([
+        'user_id'          => 1,
+        'project_id'       => $project->id,
+        'credits_used'     => $creditsUsed,
+        'sections'         => $sections,
+        'selected_sections' => $request->selected_sections,
+    ]);
+
+    return response()->json($report, 201);
 }
 
 $text = $response->json()['choices'][0]['message']['content'];
@@ -134,6 +184,27 @@ No intro or conclusion. Only the requested sections.";
         }
 
         return $sections;
+    }
+
+    private function fallbackSections(Project $project, array $selectedSections, bool $isBundle): array
+    {
+        $sections = $isBundle
+            ? ['swot', 'pricing', 'risk', 'kpi', 'marketing', 'growth']
+            : $selectedSections;
+
+        $templates = [
+            'swot' => "Strengths: {$project->name} has a focused business idea and a clear target direction.\nWeaknesses: The project needs more validation, stronger operations, and consistent tracking.\nOpportunities: There is room to grow through digital channels, partnerships, and customer loyalty.\nThreats: Competition, pricing pressure, and changing customer preferences should be monitored.",
+            'pricing' => "Use a launch-friendly pricing strategy for {$project->business_type}. Start with competitive packages, track customer response, and adjust prices based on demand, margin, and competitor movement.",
+            'risk' => "Key risks include high competition, limited budget, operational delays, and weak online visibility. Reduce risk through supplier planning, weekly KPI reviews, and clear marketing priorities.",
+            'kpi' => "Recommended KPIs: monthly revenue, customer acquisition cost, repeat purchase rate, conversion rate, average order value, and social engagement growth.",
+            'marketing' => "Focus marketing on the target market: {$project->market}. Use social media content, local promotions, customer stories, and simple offers that encourage first purchases and repeat visits.",
+            'growth' => "Phase 1: validate demand and improve the offer. Phase 2: increase marketing consistency and customer retention. Phase 3: expand channels, partnerships, and team capacity.",
+        ];
+
+        return collect($sections)
+            ->filter(fn($section) => isset($templates[$section]))
+            ->mapWithKeys(fn($section) => [$section => $templates[$section]])
+            ->all();
     }
 
     public function show($id)

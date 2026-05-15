@@ -344,6 +344,131 @@
   padding: 0.19rem 0.64rem;
 }
 
+.dashboard-projects-head {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.dashboard-projects-toolbar {
+  display: grid;
+  grid-template-columns: 1fr 220px 130px;
+  gap: 1rem;
+  padding: 1rem;
+}
+
+.dashboard-projects-toolbar .input {
+  margin: 0;
+}
+
+.dashboard-projects-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+.dashboard-project-card {
+  display: grid;
+  gap: 1rem;
+  padding: 1.35rem;
+}
+
+.dashboard-project-card:hover {
+  border-color: var(--color-primary-medium);
+  box-shadow: 0 12px 30px rgba(53, 88, 114, 0.12);
+  transform: translateY(-2px);
+}
+
+.dashboard-project-card-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.dashboard-project-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 3rem;
+  height: 3rem;
+  border-radius: 14px;
+  background: var(--color-primary);
+  color: #ffffff;
+  font-weight: 800;
+}
+
+.dashboard-project-card h3 {
+  margin: 0;
+  font-size: 1.2rem;
+}
+
+.dashboard-project-type {
+  margin: -0.65rem 0 0;
+  font-size: 0.9rem;
+}
+
+.dashboard-project-card dl {
+  display: grid;
+  gap: 0.35rem;
+  margin: 0;
+  color: var(--color-muted);
+  font-size: 0.92rem;
+}
+
+.dashboard-project-card dl div {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.dashboard-project-card dt {
+  font-weight: 600;
+  color: var(--color-text-dark);
+}
+
+.dashboard-project-card dd {
+  margin: 0;
+  text-align: right;
+}
+
+.dashboard-project-progress {
+  display: grid;
+  gap: 0.45rem;
+}
+
+.dashboard-project-progress div {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  color: var(--color-muted);
+  font-size: 0.9rem;
+}
+
+.dashboard-project-progress strong {
+  color: var(--color-text-dark);
+}
+
+.dashboard-project-progress-track {
+  height: 9px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: #edf0ed;
+}
+
+.dashboard-project-progress-track span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--color-primary);
+}
+
+.dashboard-project-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.7rem;
+}
+
 @media (max-width: 1280px) {
   .pricing-grid {
     grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -352,6 +477,10 @@
 
 @media (max-width: 900px) {
   .pricing-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .dashboard-projects-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
@@ -375,6 +504,19 @@
 
   .purchase-actions,
   .purchase-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .dashboard-projects-head,
+  .dashboard-projects-toolbar {
+    grid-template-columns: 1fr;
+  }
+
+  .dashboard-projects-head {
+    align-items: stretch;
+  }
+
+  .dashboard-projects-grid {
     grid-template-columns: 1fr;
   }
 }

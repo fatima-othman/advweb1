@@ -1,6 +1,8 @@
 import { AnimatePresence } from 'framer-motion';
 import { Navigate, Route, Routes, useLocation } from 'react-router-dom';
 import ProtectedRoute from '../components/ProtectedRoute';
+import AdminGuestRoute from '../components/auth/AdminGuestRoute';
+import AdminRoute from '../components/auth/AdminRoute';
 import { ROUTES } from '../config/routes';
 import { useAuth } from '../context/AuthContext';
 import {
@@ -28,8 +30,24 @@ import {
   Terms,
 } from '../features/feature2';
 import MainLayout from '../layouts/MainLayout';
+import AdminLayout from '../components/Layout/AdminLayout';
+import AdminAnalytics from '../pages/Analytics';
+import AdminDashboard from '../pages/Dashboard';
+import AdminLogin from '../pages/Login';
+import AdminNotifications from '../pages/Notifications';
+import AdminReports from '../pages/Reports';
+import AdminReviews from '../pages/Reviews';
+import AdminSettings from '../pages/Settings';
+import AdminUsers from '../pages/Users';
 import ForgotPassword from '../pages/ForgotPassword';
 import ResetPassword from '../pages/ResetPassword';
+import DashboardProjects from '../pages/DashboardProjects';
+import CreateProject from '../pages/Feature 3/CreateProject';
+import EditProject from '../pages/Feature 3/EditProject';
+import ProjectsList from '../pages/Feature 3/ProjectsList';
+import SectionSelection from '../pages/Feature 3/SectionSelection';
+import ReportPage from '../pages/Feature4/ReportPage';
+import Feature5Root from '../pages/Feature5Root';
 
 const AppRouter = () => {
   const { isAuthenticated } = useAuth();
@@ -38,6 +56,30 @@ const AppRouter = () => {
   return (
     <AnimatePresence mode="wait" initial={false}>
       <Routes location={location} key={location.pathname}>
+        <Route
+          path="/admin/login"
+          element={(
+            <AdminGuestRoute>
+              <AdminLogin />
+            </AdminGuestRoute>
+          )}
+        />
+        <Route
+          path="/admin"
+          element={(
+            <AdminRoute>
+              <AdminLayout />
+            </AdminRoute>
+          )}
+        >
+          <Route index element={<AdminDashboard />} />
+          <Route path="users" element={<AdminUsers />} />
+          <Route path="reports" element={<AdminReports />} />
+          <Route path="reviews" element={<AdminReviews />} />
+          <Route path="notifications" element={<AdminNotifications />} />
+          <Route path="analytics" element={<AdminAnalytics />} />
+          <Route path="settings" element={<AdminSettings />} />
+        </Route>
         <Route element={<MainLayout />}>
           <Route path={ROUTES.home} element={<HomePage />} />
           <Route
@@ -61,6 +103,14 @@ const AppRouter = () => {
             element={(
               <ProtectedRoute>
                 <DashboardPage />
+              </ProtectedRoute>
+            )}
+          />
+          <Route
+            path={ROUTES.dashboardProjects}
+            element={(
+              <ProtectedRoute>
+                <DashboardProjects />
               </ProtectedRoute>
             )}
           />
@@ -89,10 +139,58 @@ const AppRouter = () => {
             )}
           />
           <Route
+            path={ROUTES.reportView}
+            element={(
+              <ProtectedRoute>
+                <ReportPage />
+              </ProtectedRoute>
+            )}
+          />
+          <Route
+            path={ROUTES.projects}
+            element={(
+              <ProtectedRoute>
+                <ProjectsList />
+              </ProtectedRoute>
+            )}
+          />
+          <Route
+            path={ROUTES.projectNew}
+            element={(
+              <ProtectedRoute>
+                <CreateProject />
+              </ProtectedRoute>
+            )}
+          />
+          <Route
+            path={ROUTES.projectEdit}
+            element={(
+              <ProtectedRoute>
+                <EditProject />
+              </ProtectedRoute>
+            )}
+          />
+          <Route
+            path={ROUTES.projectSections}
+            element={(
+              <ProtectedRoute>
+                <SectionSelection />
+              </ProtectedRoute>
+            )}
+          />
+          <Route
             path={ROUTES.feature2Home}
             element={(
               <ProtectedRoute>
                 <Feature2Home />
+              </ProtectedRoute>
+            )}
+          />
+          <Route
+            path={ROUTES.feature5Home}
+            element={(
+              <ProtectedRoute>
+                <Feature5Root />
               </ProtectedRoute>
             )}
           />

@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import DashboardSkeleton from '../../../components/DashboardSkeleton';
 import EmptyState from '../../../components/EmptyState';
 import PageMotion from '../../../components/PageMotion';
-import { ROUTES } from '../../../config/routes';
+import { buildReportViewPath, ROUTES } from '../../../config/routes';
 import { useAuth } from '../../../context/AuthContext';
 import '../styles/dashboard.css';
 
@@ -191,9 +191,9 @@ const Dashboard = () => {
                       )}
                     </div>
 
-                    <button type="button" className="report-open report-open-disabled" disabled>
+                    <Link to={buildReportViewPath(index + 1)} className="report-open">
                       Open
-                    </button>
+                    </Link>
                   </MotionArticle>
                 ))}
               </div>

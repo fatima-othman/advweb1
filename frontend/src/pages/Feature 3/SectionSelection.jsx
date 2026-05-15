@@ -1,5 +1,7 @@
 import { useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
+import { buildReportViewPath } from '../../config/routes'
+import { API_BASE_URL } from '../../services/api'
 
 const sections = [
   { id: 'swot',      name: 'SWOT Analysis',       description: 'Strengths, weaknesses, opportunities & threats', cost: 5,  icon: '◈', tag: 'Foundation' },
@@ -26,9 +28,11 @@ const TAG_COLORS = {
 export default function SectionSelection() {
   const { id } = useParams()
   const navigate = useNavigate()
+  const projectId = Number(id)
   const [selected, setSelected]   = useState([])
   const [isBundle, setIsBundle]   = useState(false)
   const [loading, setLoading]     = useState(false)
+  const [error, setError]         = useState('')
 
   function toggleSection(sectionId) {
     if (isBundle) return
@@ -48,7 +52,14 @@ export default function SectionSelection() {
 
 async function handleGenerate() {
   try {
-    const response = await fetch('http://127.0.0.1:8000/api/reports/generate', {
+    setLoading(true)
+    setError('')
+
+    if (!Number.isInteger(projectId)) {
+      throw new Error('Invalid project id. Please go back and choose the project again.')
+    }
+
+    const response = await fetch(`${API_BASE_URL}/reports/generate`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -56,16 +67,28 @@ async function handleGenerate() {
         'X-Requested-With': 'XMLHttpRequest',
       },
       body: JSON.stringify({
-        project_id: id,
+        project_id: projectId,
         selected_sections: isBundle ? ['bundle'] : selected,
       }),
     })
 
     const report = await response.json()
-    console.log('Report:', report)
+
+    if (!response.ok) {
+      throw new Error(report?.message || 'Report was not generated')
+    }
+
+    if (!report?.id) {
+      throw new Error('Report response did not include an id')
+    }
+
+    navigate(buildReportViewPath(report.id))
     // انتقل لصفحة الريبورتز لاسماء
   } catch (error) {
     console.error('Error:', error)
+    setError(error.message || 'Report was not generated')
+  } finally {
+    setLoading(false)
   }
 }
 
@@ -231,6 +254,15 @@ async function handleGenerate() {
         </div>
 
         {/* Footer Summary */}
+        {error && (
+          <div
+            style={{ background: '#fff5f5', border: '1px solid #fecaca', color: '#b91c1c' }}
+            className="rounded-2xl p-4 mb-4 text-sm font-semibold"
+          >
+            {error}
+          </div>
+        )}
+
         <div
           style={{ background: 'white', border: '1px solid rgba(122,170,206,0.25)' }}
           className="rounded-2xl p-5 shadow-sm flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4"

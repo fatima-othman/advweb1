@@ -7,58 +7,70 @@ use Illuminate\Http\Request;
 
 class ProjectController extends Controller
 {
-    // GET /api/projects
     public function index(Request $request)
     {
-        $projects = Project::where('user_id', 1) // مؤقتاً — لاحقاً بنستخدم الـ auth
+        $projects = Project::where('user_id', 1)
+            ->withCount('reports')
             ->orderBy('created_at', 'desc')
-            ->get();
+            ->get()
+            ->map(function ($project) {
+                $project->type = $project->business_type;
+                $project->country = $project->market;
+                $project->reports = $project->reports_count;
+                $project->lastDate = optional($project->updated_at)->toDateString();
+
+                return $project;
+            });
 
         return response()->json($projects);
     }
 
-    // POST /api/projects
     public function store(Request $request)
     {
         $request->validate([
-            'name'          => 'required|string',
-            'business_type' => 'required|string',
+            'name' => 'required|string',
+            'business_type' => 'nullable|string',
+            'type' => 'nullable|string',
         ]);
 
         $project = Project::create([
-            'user_id'       => 1, // مؤقتاً
-            'name'          => $request->name,
-            'business_type' => $request->business_type,
-            'description'   => $request->description,
-            'stage'         => $request->stage,
-            'employees'     => $request->employees,
-            'budget'        => $request->budget,
-            'market'        => $request->market,
-            'competitors'   => $request->competitors,
-            'language'      => $request->language ?? 'English',
+            'user_id' => 1,
+            'name' => $request->name,
+            'business_type' => $request->business_type ?? $request->type,
+            'description' => $request->description,
+            'stage' => $request->stage,
+            'employees' => $request->employees,
+            'budget' => $request->budget,
+            'market' => $request->market ?? $request->country,
+            'competitors' => $request->competitors,
+            'language' => $request->language ?? 'English',
         ]);
 
-        return response()->json($project, 201);
+        return response()->json([
+            'message' => 'Project added successfully',
+            'project' => $project,
+        ], 201);
     }
 
-    // GET /api/projects/:id 
     public function show($id)
     {
         $project = Project::where('id', $id)
-            ->where('user_id', 1) // مؤقتاً
+            ->where('user_id', 1)
             ->firstOrFail();
+
+        $project->type = $project->business_type;
+        $project->country = $project->market;
 
         return response()->json($project);
     }
 
-    // PUT /api/projects/:id
     public function update(Request $request, $id)
     {
         $project = Project::where('id', $id)
             ->where('user_id', 1)
             ->firstOrFail();
 
-        $project->update($request->only([
+        $project->fill($request->only([
             'name',
             'business_type',
             'description',
@@ -70,14 +82,26 @@ class ProjectController extends Controller
             'language',
         ]));
 
-        return response()->json($project); 
+        if ($request->filled('type')) {
+            $project->business_type = $request->type;
+        }
+
+        if ($request->filled('country')) {
+            $project->market = $request->country;
+        }
+
+        $project->save();
+
+        return response()->json([
+            'message' => 'Project updated successfully',
+            'project' => $project,
+        ]);
     }
 
-    // DELETE /api/projects/:id 
     public function destroy($id)
     {
         $project = Project::where('id', $id)
-            ->where('user_id', 1) 
+            ->where('user_id', 1)
             ->firstOrFail();
 
         $project->delete();

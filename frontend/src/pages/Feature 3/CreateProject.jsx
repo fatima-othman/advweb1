@@ -126,7 +126,17 @@ export default function CreateProject() {
           language: answers.language,
         }),
       })
-      const project = await response.json()
+      const data = await response.json()
+
+      if (!response.ok) {
+        throw new Error(data?.message || 'Project was not saved')
+      }
+
+      const project = data.project || data
+      if (!project?.id) {
+        throw new Error('Project response did not include an id')
+      }
+
       navigate(`/projects/${project.id}/select`)
     } catch (error) {
       console.error('Error:', error)

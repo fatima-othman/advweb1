@@ -1,5 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { useAuth } from '../../context/AuthContext'
+import { API_BASE_URL } from '../../services/api'
 
 const STAGE_COLORS = {
   Idea:      { bg: 'rgba(156,213,255,0.15)', text: '#355872', dot: '#9CD5FF' },
@@ -54,11 +56,13 @@ function EmptyState({ onNew }) {
 
 export default function ProjectsList() {
   const navigate = useNavigate()
+  const { user } = useAuth()
+  const displayName = user?.name?.split(' ')[0] || user?.email || 'there'
   const [projects, setProjects] = useState([])
   const [loading, setLoading]   = useState(true)
 
   useEffect(() => {
-    fetch('http://127.0.0.1:8000/api/projects', {
+    fetch(`${API_BASE_URL}/projects`, {
       headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' }
     })
       .then(res => res.json())
@@ -76,7 +80,7 @@ export default function ProjectsList() {
         <div>
           <p style={{ color: '#7AAACE' }} className="text-sm font-semibold uppercase tracking-widest mb-1">Dashboard</p>
           <h1 className="text-4xl font-black text-gray-900 leading-tight">
-            Welcome back, <span style={{ color: '#355872' }}>Taima</span> 👋
+            Welcome back, <span style={{ color: '#355872' }}>{displayName}</span>
           </h1>
           <p className="text-gray-500 mt-1.5 text-sm">Manage and grow your business strategies</p>
         </div>

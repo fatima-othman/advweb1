@@ -5,9 +5,15 @@ export const ROUTES = {
   forgotPassword: '/forgot-password',
   resetPassword: '/reset-password',
   dashboard: '/dashboard',
+  dashboardProjects: '/dashboard/projects',
   dashboardCredits: '/dashboard/credits',
   dashboardPricing: '/dashboard/pricing',
   dashboardHistory: '/dashboard/history',
+  reportView: '/reports/:id/view',
+  projects: '/projects',
+  projectNew: '/projects/new',
+  projectEdit: '/projects/:id/edit',
+  projectSections: '/projects/:id/select',
   feature2Home: '/feature2',
   feature2AuthPlus: '/feature2/auth-plus',
   feature2StrategyCore: '/feature2/strategy',
@@ -20,9 +26,11 @@ export const ROUTES = {
   feature2Privacy: '/feature2/business/privacy',
   feature2Terms: '/feature2/business/terms',
   feature2Profile: '/feature2/profile',
+  feature5Home: '/feature5/*',
 };
 
 export const buildStrategyDetailsPath = (id) => `/feature2/strategy/${id}`;
+export const buildReportViewPath = (id) => `/reports/${id}/view`;
 
 export const NAV_LINKS = {
   public: [
@@ -30,8 +38,10 @@ export const NAV_LINKS = {
   ],
   private: [
     { label: 'Dashboard', to: ROUTES.dashboard },
+    { label: 'Projects', to: ROUTES.dashboardProjects },
     { label: 'Credits', to: ROUTES.dashboardCredits },
     { label: 'Feature 2', to: ROUTES.feature2Home },
+    { label: 'Feature 5', to: '/feature5' },
   ],
 };
 
@@ -40,5 +50,7 @@ export const QUICK_LINKS = [
   { label: 'Register', to: ROUTES.register, protected: false },
   { label: 'Login', to: ROUTES.login, protected: false },
   { label: 'Dashboard', to: ROUTES.dashboard, protected: true },
+  { label: 'Projects', to: ROUTES.dashboardProjects, protected: true },
   { label: 'Feature 2', to: ROUTES.feature2Home, protected: true },
+  { label: 'Feature 5', to: '/feature5', protected: true },
 ];
