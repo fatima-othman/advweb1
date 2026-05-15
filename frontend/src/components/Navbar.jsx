@@ -1,6 +1,6 @@
 ﻿import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
-import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { Link, NavLink, useLocation, useNavigate } from 'react-router-dom';
 import LoadingSpinner from './LoadingSpinner';
 import { ROUTES } from '../config/routes';
 import { useAuth } from '../context/AuthContext';
@@ -93,6 +93,14 @@ const Navbar = () => {
   const [isLoggingOut, setIsLoggingOut] = useState(false);
 
   const isAuthScreen = location.pathname === ROUTES.login || location.pathname === ROUTES.register;
+  const isFeature2Area = location.pathname.startsWith('/feature2');
+  const isDashboardArea = location.pathname.startsWith('/dashboard');
+  const feature2Tabs = [
+    { label: 'Dashboard', to: ROUTES.dashboard, icon: 'dashboard' },
+    { label: 'History', to: ROUTES.dashboardHistory, icon: 'history' },
+    { label: 'Pricing', to: ROUTES.dashboardPricing, icon: 'pricing' },
+    { label: 'Credit', to: ROUTES.dashboardCredits, icon: 'credits' },
+  ];
 
   useEffect(() => {
     const onScroll = () => {
@@ -150,9 +158,16 @@ const Navbar = () => {
               animate={{ opacity: 1 }}
               transition={{ duration: 0.15 }}
             >
-              <Link to={ROUTES.register} className="btn-primary nav-cta">
-                Get started
-              </Link>
+              {isAuthenticated && (isFeature2Area || isDashboardArea) ? (
+                <div className="dashboard-nav-links">
+                  {feature2Tabs.map((item) => (
+                    <NavLink key={item.to} to={item.to} className="nav-link">
+                      <span className="nav-icon"><Icon name={item.icon} /></span>
+                      {item.label}
+                    </NavLink>
+                  ))}
+                </div>
+              ) : null}
 
               {isAuthenticated ? (
                 <div className="navbar-auth-area">
