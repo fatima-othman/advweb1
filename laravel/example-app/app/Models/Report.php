@@ -13,15 +13,15 @@ class Report extends Model
         'user_id',
         'project_id',
         'title',
+        'credits_used',
         'sections',
+        'selected_sections',
     ];
 
-    protected function casts(): array
-    {
-        return [
-            'sections' => 'array',
-        ];
-    }
+    protected $casts = [
+        'sections'          => 'array',
+        'selected_sections' => 'array',
+    ];
 
     public function user()
     {

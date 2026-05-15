@@ -12,7 +12,14 @@ return new class extends Migration
             $table->id();
             $table->foreignId('user_id')->constrained()->cascadeOnDelete();
             $table->string('name');
+            $table->string('business_type')->nullable();
             $table->text('description')->nullable();
+            $table->string('stage')->nullable();
+            $table->string('employees')->nullable();
+            $table->string('budget')->nullable();
+            $table->text('market')->nullable();
+            $table->text('competitors')->nullable();
+            $table->string('language')->default('English');
             $table->timestamps();
         });
     }

@@ -4,24 +4,31 @@ use App\Http\Controllers\Api\Feature1\AuthController;
 use App\Http\Controllers\Api\Feature2\BillingController;
 use App\Http\Controllers\Api\Feature2\CreditController;
 use App\Http\Controllers\Api\Feature2\CreditPackageController;
-use App\Http\Controllers\Api\ProjectController;
-use App\Http\Controllers\Api\ReportController;
-use App\Http\Controllers\Api\Feature2\StripeWebhookController;
 use App\Http\Controllers\Api\Feature2\StrategyReportController;
+use App\Http\Controllers\Api\Feature2\StripeWebhookController;
 use App\Http\Controllers\Api\Feature2\TransactionController;
+use App\Http\Controllers\Api\PasswordResetController;
+use App\Http\Controllers\Api\ReportController as ApiReportController;
+use App\Http\Controllers\ProjectController as Feature3ProjectController;
+use App\Http\Controllers\ReportController as Feature3ReportController;
 use Illuminate\Support\Facades\Route;
 
 Route::post('/register', [AuthController::class, 'register']);
 Route::post('/login', [AuthController::class, 'login']);
 Route::post('/stripe/webhook', [StripeWebhookController::class, 'handle']);
+Route::post('/forgot-password', [PasswordResetController::class, 'forgotPassword']);
+Route::post('/reset-password', [PasswordResetController::class, 'resetPassword']);
+
+Route::apiResource('projects', Feature3ProjectController::class);
+Route::post('reports/generate', [Feature3ReportController::class, 'generate']);
+Route::get('reports/{id}', [Feature3ReportController::class, 'show']);
 
 Route::middleware('auth:sanctum')->group(function () {
     Route::get('/me', [AuthController::class, 'me']);
     Route::get('/user/me', [AuthController::class, 'me']);
     Route::post('/logout', [AuthController::class, 'logout']);
 
-    Route::apiResource('projects', ProjectController::class);
-    Route::apiResource('reports', ReportController::class);
+    Route::apiResource('reports', ApiReportController::class)->except(['show']);
     Route::apiResource('credit-packages', CreditPackageController::class);
     Route::apiResource('transactions', TransactionController::class);
 
@@ -32,7 +39,6 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/billing/checkout-session/confirm', [BillingController::class, 'confirmCheckoutSession']);
     Route::post('/billing/auto-recharge', [BillingController::class, 'updateAutoRechargeSettings']);
 
-    // Frontend compatibility aliases
     Route::get('/credit-transactions', [TransactionController::class, 'index']);
     Route::get('/credits-overview', function (\Illuminate\Http\Request $request) {
         return response()->json([
@@ -50,8 +56,3 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/strategy-reports', [StrategyReportController::class, 'store']);
     Route::get('/strategy-reports/{strategyReport}', [StrategyReportController::class, 'show']);
 });
-
-use App\Http\Controllers\Api\PasswordResetController;
-Route::post('/forgot-password', [PasswordResetController::class, 'forgotPassword']);
-Route::post('/reset-password', [PasswordResetController::class, 'resetPassword']);
-

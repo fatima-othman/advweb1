@@ -12,7 +12,14 @@ class Project extends Model
     protected $fillable = [
         'user_id',
         'name',
+        'business_type',
         'description',
+        'stage',
+        'employees',
+        'budget',
+        'market',
+        'competitors',
+        'language',
     ];
 
     public function user()
