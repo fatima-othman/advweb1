@@ -60,6 +60,9 @@
 }
 
 .auth-inline-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
   border: 0;
   background: transparent;
   color: var(--color-primary);
@@ -70,6 +73,31 @@
 
 .auth-inline-link:hover {
   text-decoration: underline;
+}
+
+.auth-label-icon,
+.auth-link-icon,
+.auth-btn-icon {
+  width: 0.95rem;
+  height: 0.95rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  vertical-align: middle;
+}
+
+.auth-label-icon svg,
+.auth-link-icon svg,
+.auth-btn-icon svg {
+  width: 100%;
+  height: 100%;
+}
+
+.auth-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.38rem;
 }
 
 .auth-footnote {
@@ -108,6 +136,9 @@
 }
 
 .password-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.28rem;
   border: 0;
   background: transparent;
   color: var(--color-primary);
@@ -118,6 +149,19 @@
   top: 50%;
   transform: translateY(-50%);
   transition: color 0.2s ease;
+}
+
+.password-toggle-icon {
+  width: 0.9rem;
+  height: 0.9rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.password-toggle-icon svg {
+  width: 100%;
+  height: 100%;
 }
 
 .password-toggle:hover {

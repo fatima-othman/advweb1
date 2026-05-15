@@ -21,13 +21,6 @@ const included = [
   { title: 'Competitive Analysis', desc: 'Market positioning and competitor insights' },
 ];
 
-const fallbackPlans = [
-  { id: 'starter-fallback', name: 'Starter', credits: 70, price: 50.0, isFallback: true },
-  { id: 'growth-fallback', name: 'Growth', credits: 200, price: 120.0, isFallback: true },
-  { id: 'business-fallback', name: 'Business', credits: 500, price: 260.0, isFallback: true },
-  { id: 'enterprise-fallback', name: 'Enterprise', credits: 1200, price: 550.0, isFallback: true },
-];
-
 const formatPrice = (value) => {
   const numberValue = Number(value || 0);
   return `${numberValue.toFixed(2)} ILS`;
@@ -110,7 +103,7 @@ const DashboardPricing = () => {
   const [setupIntentSecret, setSetupIntentSecret] = useState('');
   const [loadingSetupIntent, setLoadingSetupIntent] = useState(false);
   const [cardSaved, setCardSaved] = useState(false);
-  const displayPlans = useMemo(() => (plans.length > 0 ? plans : fallbackPlans), [plans]);
+  const displayPlans = useMemo(() => plans, [plans]);
 
   useEffect(() => {
     let isMounted = true;
@@ -149,16 +142,6 @@ const DashboardPricing = () => {
       return;
     }
 
-    if (selectedPlan.isFallback) {
-      setSelectedPlan(null);
-      setNotice({
-        type: 'success',
-        message: 'Plan selected. Complete card setup to continue payment flow.',
-      });
-      await handleCreateSetupIntent();
-      return;
-    }
-
     setProcessingPayment(true);
     setNotice({ type: '', message: '' });
 
@@ -166,16 +149,53 @@ const DashboardPricing = () => {
       const origin = window.location.origin;
       const result = await createCheckoutSession({
         credit_package_id: selectedPlan.id,
-        success_url: `${origin}${ROUTES.dashboardHistory}`,
+        success_url: `${origin}${ROUTES.dashboardPaymentSuccess}?session_id={CHECKOUT_SESSION_ID}`,
         cancel_url: `${origin}${ROUTES.dashboardPricing}`,
       });
 
-      if (result?.checkout_url) {
-        window.location.href = result.checkout_url;
+      const checkoutUrl =
+        result?.checkout_url ||
+        result?.checkoutUrl ||
+        result?.url ||
+        result?.data?.checkout_url ||
+        result?.data?.url;
+
+      const sessionId =
+        result?.checkout_session_id ||
+        result?.checkoutSessionId ||
+        result?.session_id ||
+        result?.id ||
+        result?.data?.checkout_session_id ||
+        result?.data?.id;
+
+      if (checkoutUrl) {
+        window.location.href = checkoutUrl;
         return;
       }
 
-      setNotice({ type: 'error', message: 'Checkout session created but redirect URL is missing.' });
+      if (sessionId) {
+        const stripe = await stripePromise;
+        if (!stripe) {
+          setNotice({ type: 'error', message: 'Stripe.js failed to initialize.' });
+          return;
+        }
+
+        const { error: redirectError } = await stripe.redirectToCheckout({
+          sessionId,
+        });
+
+        if (redirectError) {
+          setNotice({ type: 'error', message: redirectError.message || 'Failed to redirect to Stripe Checkout.' });
+          return;
+        }
+
+        return;
+      }
+
+      setNotice({
+        type: 'error',
+        message: `Checkout response missing redirect data. (${JSON.stringify(result)})`,
+      });
     } catch (error) {
       setNotice({ type: 'error', message: error?.message || 'Failed to start checkout session.' });
     } finally {
@@ -194,7 +214,20 @@ const DashboardPricing = () => {
 
     try {
       const result = await createSetupIntent();
-      setSetupIntentSecret(result?.client_secret || '');
+      const clientSecret = result?.client_secret || '';
+      const isValidStripeClientSecret = typeof clientSecret === 'string' && clientSecret.includes('_secret_');
+
+      if (!isValidStripeClientSecret) {
+        setSetupIntentSecret('');
+        setCardSaved(false);
+        setNotice({
+          type: 'success',
+          message: result?.message || 'Billing setup is disabled in local mock mode. You can continue purchase testing.',
+        });
+        return;
+      }
+
+      setSetupIntentSecret(clientSecret);
       setCardSaved(false);
     } catch (error) {
       setNotice({ type: 'error', message: error?.message || 'Failed to initialize Stripe card setup.' });
@@ -258,7 +291,7 @@ const DashboardPricing = () => {
               >
                 <h3>Free</h3>
                 <p className="pricing-subtitle">On registration</p>
-                <p className="pricing-price">$0.00</p>
+                <p className="pricing-price">0.00 ILS</p>
                 <p className="pricing-credits">20 credits</p>
                 <button type="button" className="btn-secondary" disabled>Current Plan</button>
               </MotionArticle>
@@ -274,9 +307,11 @@ const DashboardPricing = () => {
                 >
                   {index === 1 ? <span className="pricing-badge">Best Value</span> : null}
                   <h3>{plan.name}</h3>
-                  <p className="pricing-subtitle">One-time purchase</p>
+                  <p className="pricing-subtitle">
+                    {plan.billing_cycle === 'monthly' ? 'Monthly subscription' : 'One-time purchase'}
+                  </p>
                   <p className="pricing-price">{formatPrice(plan.price)}</p>
-                  <p className="pricing-credits">{plan.credits} credits</p>
+                  <p className="pricing-credits">{`${plan.credits} credits`}</p>
                   <button
                     type="button"
                     className={index === 1 ? 'btn-primary' : 'btn-secondary'}
@@ -323,7 +358,7 @@ const DashboardPricing = () => {
                 </p>
                 <p>
                   <span>Credits</span>
-                  <strong>{selectedPlan.credits} credits</strong>
+                  <strong>{`${selectedPlan.credits} credits`}</strong>
                 </p>
                 <p>
                   <span>Total</span>
@@ -332,6 +367,7 @@ const DashboardPricing = () => {
               </div>
 
               <p className="purchase-secure">Secure payment powered by Stripe Checkout</p>
+              <InlineAlert type="error" message={notice.type === 'error' ? notice.message : ''} />
               <div className="purchase-actions">
                 <button type="button" className="btn-secondary" onClick={() => setSelectedPlan(null)} disabled={processingPayment}>
                   Cancel

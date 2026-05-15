@@ -41,6 +41,11 @@
   margin-bottom: 0.6rem;
 }
 
+.metric-icon svg {
+  width: 16px;
+  height: 16px;
+}
+
 .metric-value {
   color: var(--color-text-dark);
   font-size: 1.9rem;

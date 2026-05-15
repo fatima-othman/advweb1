@@ -84,10 +84,22 @@ const DashboardCredits = () => {
   }, []);
 
   const progressWidth = useMemo(() => {
-    const estimatedCap = Math.max(100, balance || 0);
-    const percent = Math.min(100, Math.round((Math.max(balance, 0) / estimatedCap) * 100));
-    return `${Math.max(percent, 8)}%`;
-  }, [balance]);
+    const highestPackageCredits = packages.reduce((max, pkg) => {
+      const credits = Number(pkg?.credits || 0);
+      return credits > max ? credits : max;
+    }, 0);
+
+    const referenceCap = Math.max(100, highestPackageCredits || 1200);
+    const percent = Math.min(100, Math.round((Math.max(balance, 0) / referenceCap) * 100));
+    return `${Math.max(percent, 4)}%`;
+  }, [balance, packages]);
+
+  const totalCreditsPurchased = useMemo(
+    () => recentActivity
+      .filter((row) => Number(row.amount || 0) > 0 && Number(row.credits || 0) > 0)
+      .reduce((sum, row) => sum + Number(row.credits || 0), 0),
+    [recentActivity],
+  );
 
   const handleSaveAutoRecharge = async () => {
     setSavingAuto(true);
@@ -123,6 +135,9 @@ const DashboardCredits = () => {
                 <h3>
                   {loading ? <LoadingSpinner label="Loading" small /> : balance} <small>current balance</small>
                 </h3>
+                <p className="credits-hint" style={{ marginTop: '0.35rem' }}>
+                  Total Credits Purchased: <strong>{loading ? '...' : totalCreditsPurchased}</strong>
+                </p>
               </div>
               <Link to={ROUTES.dashboardPricing} className="btn-primary">Buy Credits</Link>
             </div>
@@ -130,7 +145,7 @@ const DashboardCredits = () => {
             <div className="credits-progress-track">
               <span className="credits-progress-fill" style={{ width: progressWidth }} />
             </div>
-            <p className="credits-hint">Each AI strategy generation uses 5-20 credits depending on complexity</p>
+            <p className="credits-hint">Each AI strategy generation uses 10 credits</p>
           </MotionSection>
 
           <section className="card included-card">

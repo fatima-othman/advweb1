@@ -9,39 +9,90 @@ const featureCards = [
     title: 'AI-Powered Analysis',
     description:
       'Advanced algorithms analyze market trends, competition, and opportunities to generate data-driven strategies.',
-    icon: 'A',
+    icon: 'analysis',
   },
   {
     title: 'Structured Reports',
     description:
       'Professional, comprehensive business strategy reports ready to present to stakeholders and investors.',
-    icon: 'R',
+    icon: 'reports',
   },
   {
     title: 'Growth Insights',
     description:
       'Identify growth opportunities and potential challenges before they impact your business.',
-    icon: 'G',
+    icon: 'growth',
   },
   {
     title: 'Goal Alignment',
     description:
       'Align your strategy with business objectives and create actionable roadmaps for success.',
-    icon: 'T',
+    icon: 'goals',
   },
   {
     title: 'Multi-dimensional',
     description: 'Analyze from multiple perspectives: market, financial, operational, and competitive.',
-    icon: 'M',
+    icon: 'multi',
   },
   {
     title: 'Instant Generation',
     description: 'Generate comprehensive strategies in minutes, not weeks. Focus on execution, not research.',
-    icon: 'I',
+    icon: 'instant',
   },
 ];
 
 const MotionLink = motion(Link);
+const Icon = ({ name }) => {
+  const icons = {
+    analysis: (
+      <>
+        <path d="M4 19h16" />
+        <path d="M7 19v-7" />
+        <path d="M12 19V8" />
+        <path d="M17 19v-4" />
+      </>
+    ),
+    reports: (
+      <>
+        <path d="M8 3h6l4 4v14H8a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2Z" />
+        <path d="M14 3v4h4" />
+        <path d="M10 12h6" />
+        <path d="M10 16h6" />
+      </>
+    ),
+    growth: (
+      <>
+        <path d="m5 16 5-5 3 3 6-6" />
+        <path d="M15 8h4v4" />
+      </>
+    ),
+    goals: (
+      <>
+        <circle cx="12" cy="12" r="8" />
+        <circle cx="12" cy="12" r="4" />
+        <circle cx="12" cy="12" r="1.5" />
+      </>
+    ),
+    multi: (
+      <>
+        <path d="M3 12h18" />
+        <path d="M12 3v18" />
+        <path d="M6 6l12 12" />
+      </>
+    ),
+    instant: (
+      <>
+        <path d="M13 2 5 14h6l-1 8 8-12h-6z" />
+      </>
+    ),
+  };
+
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      {icons[name]}
+    </svg>
+  );
+};
 
 const sectionVariants = {
   hidden: { opacity: 0, y: 18 },
@@ -130,7 +181,9 @@ const Home = () => {
                 transition={{ duration: 0.25, delay: index * 0.03 }}
                 whileHover={{ y: -4 }}
               >
-                <div className="feature-icon">{item.icon}</div>
+                <div className="feature-icon">
+                  <Icon name={item.icon} />
+                </div>
                 <h3>{item.title}</h3>
                 <p>{item.description}</p>
               </motion.article>

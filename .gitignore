@@ -1,0 +1,31 @@
+# PHP
+/laravel/example-app/vendor/
+/laravel/example-app/node_modules/
+/laravel/example-app/.env
+/laravel/example-app/.env.local
+/laravel/example-app/storage/logs/
+/laravel/example-app/bootstrap/cache/
+
+# Frontend
+/frontend/node_modules/
+/frontend/dist/
+/frontend/.env.local
+/frontend/.env.*.local
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# OS
+Thumbs.db
+.DS_Store
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*

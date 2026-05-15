@@ -1,4 +1,4 @@
-import { motion } from 'framer-motion';
+ï»¿import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import DashboardSkeleton from '../../../components/DashboardSkeleton';
 import EmptyState from '../../../components/EmptyState';
@@ -11,27 +11,67 @@ const MotionArticle = motion.article;
 const MotionSection = motion.section;
 const MotionDiv = motion.div;
 
+const Icon = ({ name }) => {
+  const icons = {
+    reports: (
+      <>
+        <path d="M8 3h6l4 4v14H8a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2Z" />
+        <path d="M14 3v4h4" />
+        <path d="M10 12h6" />
+        <path d="M10 16h6" />
+      </>
+    ),
+    credits: (
+      <>
+        <path d="M12 4v16" />
+        <path d="M17 8.5c0-2-1.8-3.5-5-3.5S7 6.4 7 8.3c0 2 1.9 2.8 5 3.6 3 .8 5 1.5 5 3.8 0 2-1.8 3.8-5 3.8S7 18 7 16.1" />
+      </>
+    ),
+    score: (
+      <>
+        <path d="M4 18h16" />
+        <path d="M7 18V9" />
+        <path d="M12 18V5" />
+        <path d="M17 18v-7" />
+      </>
+    ),
+    downloads: (
+      <>
+        <path d="M12 4v10" />
+        <path d="m8 10 4 4 4-4" />
+        <path d="M5 20h14" />
+      </>
+    ),
+  };
+
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      {icons[name]}
+    </svg>
+  );
+};
+
 const metrics = [
-  { icon: 'DOC', value: '12', label: 'Generated Reports', note: '+3 this week' },
-  { icon: 'CR', value: '45', label: 'Credits Remaining', note: 'out of 50' },
-  { icon: 'SC', value: '89%', label: 'Average Score', note: '+5% vs last month' },
-  { icon: 'DL', value: '28', label: 'Total Downloads', note: 'PDF exports' },
+  { icon: 'reports', value: '12', label: 'Generated Reports', note: '+3 this week' },
+  { icon: 'credits', value: '45', label: 'Credits Remaining', note: 'out of 50' },
+  { icon: 'score', value: '89%', label: 'Average Score', note: '+5% vs last month' },
+  { icon: 'downloads', value: '28', label: 'Total Downloads', note: 'PDF exports' },
 ];
 
 const reports = [
   {
     title: 'E-Commerce Growth Strategy',
-    meta: '2026-04-10  •  Completed',
+    meta: '2026-04-10  â€¢  Completed',
     score: '92%',
   },
   {
     title: 'Market Expansion Analysis',
-    meta: '2026-04-08  •  Completed',
+    meta: '2026-04-08  â€¢  Completed',
     score: '87%',
   },
   {
     title: 'Product Launch Strategy',
-    meta: '2026-04-11  •  In Progress',
+    meta: '2026-04-11  â€¢  In Progress',
     score: null,
   },
 ];
@@ -68,12 +108,32 @@ const Dashboard = () => {
                 transition={{ duration: 0.25, delay: index * 0.04 }}
                 whileHover={{ y: -4 }}
               >
-                <span className="metric-icon">{item.icon}</span>
+                <span className="metric-icon">
+                  <Icon name={item.icon} />
+                </span>
                 <p className="metric-value">{item.value}</p>
                 <h2>{item.label}</h2>
                 <span>{item.note}</span>
               </MotionArticle>
             ))}
+          </section>
+
+          <section className="card dashboard-activity">
+            <h2>My Profile</h2>
+            <div className="activity-list">
+              <div className="activity-row">
+                <span>Name</span>
+                <strong>{user?.name || 'N/A'}</strong>
+              </div>
+              <div className="activity-row">
+                <span>Email</span>
+                <strong>{user?.email || 'N/A'}</strong>
+              </div>
+              <div className="activity-row">
+                <span>Credit Balance</span>
+                <strong>{Number(user?.credit_balance || 0)}</strong>
+              </div>
+            </div>
           </section>
 
           <MotionSection className="dashboard-generate-banner" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.25 }}>
@@ -158,4 +218,3 @@ const Dashboard = () => {
 };
 
 export default Dashboard;
-

@@ -1,9 +1,10 @@
 import { useEffect, useMemo, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import EmptyState from '../../../components/EmptyState';
 import InlineAlert from '../../../components/InlineAlert';
 import LoadingSpinner from '../../../components/LoadingSpinner';
 import PageMotion from '../../../components/PageMotion';
-import { getTransactions } from '../services/feature2Service';
+import { confirmCheckoutSession, getTransactions } from '../services/feature2Service';
 import '../styles/credits.css';
 
 const formatDate = (value) => {
@@ -39,6 +40,7 @@ const formatStatus = (value) => {
 };
 
 const DashboardHistory = () => {
+  const [searchParams, setSearchParams] = useSearchParams();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [transactions, setTransactions] = useState([]);
@@ -51,7 +53,29 @@ const DashboardHistory = () => {
       setError('');
 
       try {
-        const allTransactions = await getTransactions();
+        const sessionId = searchParams.get('session_id');
+        if (sessionId) {
+          await confirmCheckoutSession({ session_id: sessionId });
+          setSearchParams((prev) => {
+            const next = new URLSearchParams(prev);
+            next.delete('session_id');
+            return next;
+          }, { replace: true });
+        }
+
+        let allTransactions = await getTransactions();
+
+        const pendingMockSessions = allTransactions
+          .filter((row) => row?.status === 'pending' && String(row?.stripe_checkout_session_id || '').startsWith('mock_'))
+          .map((row) => row.stripe_checkout_session_id);
+
+        if (pendingMockSessions.length > 0) {
+          await Promise.all(
+            pendingMockSessions.map((sid) => confirmCheckoutSession({ session_id: sid })),
+          );
+          allTransactions = await getTransactions();
+        }
+
         if (isMounted) {
           setTransactions(allTransactions);
         }
@@ -71,7 +95,7 @@ const DashboardHistory = () => {
     return () => {
       isMounted = false;
     };
-  }, []);
+  }, [searchParams, setSearchParams]);
 
   const { payments, activity } = useMemo(() => {
     const paymentRows = transactions.filter((row) => Number(row.amount || 0) > 0 && Number(row.credits || 0) > 0);
@@ -80,6 +104,11 @@ const DashboardHistory = () => {
       activity: transactions,
     };
   }, [transactions]);
+
+  const totalPurchasedCredits = useMemo(
+    () => payments.reduce((sum, row) => sum + Number(row.credits || 0), 0),
+    [payments],
+  );
 
   return (
     <PageMotion>
@@ -104,6 +133,9 @@ const DashboardHistory = () => {
           ) : (
             <section className="card credits-table-card">
               <h3>Payment History</h3>
+              <p style={{ margin: '0', padding: '0 1.3rem 1rem', color: 'var(--color-muted)', fontSize: '0.92rem' }}>
+                Total Credits Purchased: <strong style={{ color: 'var(--color-text-dark)' }}>{totalPurchasedCredits}</strong>
+              </p>
               <table className="credits-table">
                 <thead>
                   <tr>

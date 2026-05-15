@@ -149,10 +149,12 @@
 .pricing-grid {
   display: grid;
   grid-template-columns: repeat(5, minmax(0, 1fr));
+  justify-content: center;
   gap: 1rem;
 }
 
 .pricing-card {
+  width: 100%;
   text-align: center;
   position: relative;
   padding: 1.35rem 1.1rem;
@@ -357,6 +359,7 @@
 @media (max-width: 760px) {
   .pricing-grid {
     grid-template-columns: 1fr;
+    justify-content: stretch;
   }
 
   .included-grid {
