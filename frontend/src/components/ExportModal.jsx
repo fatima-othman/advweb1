@@ -23,7 +23,7 @@ function ExportModal({ isOpen, companyName, date, onDownload, onClose }) {
             <li>Overview</li>
             <li>SWOT Analysis</li>
             <li>Marketing Plan</li>
-            <li>Social Media Plan</li>
+            <li>KPI Recommendations</li>
             <li>Pricing Strategy</li>
             <li>Growth Roadmap</li>
             <li>Risk Analysis</li>

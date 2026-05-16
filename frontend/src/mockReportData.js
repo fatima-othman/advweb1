@@ -32,8 +32,8 @@ const mockReportData = {
                 intro: "Simple marketing plan for early users.",
                 campaigns: [
                     {
-                        title: "Instagram posts",
-                        idea: "Share simple startup tips",
+                        title: "Local awareness campaign",
+                        idea: "Share simple startup tips through local channels",
                         goal: "Increase awareness"
                     },
                     {
@@ -46,20 +46,25 @@ const mockReportData = {
         },
 
         {
-            section_key: "social_media_plan",
-            section_title: "Social Media Plan",
+            section_key: "kpi",
+            section_title: "KPI Recommendations",
             content: {
-                intro: "Weekly simple posting plan.",
-                schedule: [
+                intro: "Simple KPIs to track early performance.",
+                items: [
                     {
-                        day: "Monday",
-                        platform: "Instagram",
-                        content: "Startup tip"
+                        title: "Monthly Revenue",
+                        value: "$18,500",
+                        note: "Track total sales each month"
                     },
                     {
-                        day: "Wednesday",
-                        platform: "LinkedIn",
-                        content: "Case example"
+                        title: "Customer Retention",
+                        value: "35%",
+                        note: "Measure repeat customers"
+                    },
+                    {
+                        title: "Conversion Rate",
+                        value: "10%",
+                        note: "Track visitor-to-customer conversion"
                     }
                 ]
             }
@@ -121,7 +126,7 @@ const mockReportData = {
                         goal: "Improve engagement",
                         tasks: [
                             "Add better templates",
-                            "Test one referral idea"
+                            "Review KPI performance"
                         ]
                     }
                 ]
