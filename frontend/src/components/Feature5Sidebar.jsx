@@ -32,7 +32,6 @@ function Feature5Sidebar({
           <NavButton to="/dashboard" label="Dashboard" />
           <NavButton to="/history" label="Report History" />
           <NavButton to="/comparison" label="Comparison" />
-          <NavButton to="/billing" label="Billing & Credits" />
           <NavButton to="/settings" label="Settings" />
         </nav>
       </div>

@@ -10,7 +10,8 @@ import Pricing from './Pricing.jsx'
 import Growth from './Growth.jsx'
 import Risk from './Risk.jsx'
 import ExportModal from '../../components/ExportModal.jsx'
-import { API_BASE_URL } from '../../services/api'
+import api from '../../services/api'
+import { storage } from '../../utils/storage'
 import '../App.css'
 
 const fallbackReport = {
@@ -28,15 +29,8 @@ function ReportPage() {
   const [isExportModalOpen, setIsExportModalOpen] = useState(false)
 
   useEffect(() => {
-    fetch(`${API_BASE_URL}/reports/${id}`)
-      .then((res) => {
-        if (!res.ok) {
-          throw new Error(`Report API failed with status ${res.status}`)
-        }
-
-        return res.json()
-      })
-      .then((data) => setReport(data))
+    api.get(`/reports/${id}`)
+      .then((response) => setReport(response.data))
       .catch((error) => {
         console.error('Error fetching report:', error)
         setReport(fallbackReport)
@@ -271,11 +265,20 @@ function ReportPage() {
     },
   }
 
+  const incrementDownloadCounter = () => {
+    const user = storage.getUser()
+    const userKey = user?.id || user?.email || 'guest'
+    const key = `strategai_download_count_${userKey}`
+    const current = Number(localStorage.getItem(key) || 0)
+    localStorage.setItem(key, String(current + 1))
+  }
+
   function handlePdfClick() {
     setIsExportModalOpen(true)
   }
 
   function handleDownloadPdf() {
+    incrementDownloadCounter()
     setIsExportModalOpen(false)
     setTimeout(() => {
       window.print()

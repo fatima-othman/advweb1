@@ -22,8 +22,8 @@ const ForgotPassword = () => {
 
     setLoading(true);
     try {
-      await requestPasswordReset({ email });
-      setMessage('If this email exists, a reset link will be sent shortly.');
+      const result = await requestPasswordReset({ email });
+      setMessage(result?.message || 'If this email exists, a password reset link will be sent shortly.');
     } catch (err) {
       setError(err.message || 'Could not send reset request.');
     } finally {
@@ -36,7 +36,7 @@ const ForgotPassword = () => {
       <div className="container auth-container">
         <section className="card auth-card" aria-labelledby="forgot-heading">
           <h1 id="forgot-heading">Forgot Password</h1>
-          <p className="auth-subtitle">Enter your email and we will send a reset link.</p>
+          <p className="auth-subtitle">Enter your email and we will send a password reset link.</p>
           {error ? <p className="form-alert">{error}</p> : null}
           {message ? <p className="feature2-success">{message}</p> : null}
           <form onSubmit={handleSubmit} noValidate>

@@ -9,7 +9,9 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Validation\ValidationException;
+use Illuminate\Validation\Rules\Password;
 
 class AuthController extends Controller
 {
@@ -18,7 +20,7 @@ class AuthController extends Controller
         $data = $request->validate([
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'email', 'max:255', 'unique:users,email'],
-            'password' => ['required', 'string', 'min:8', 'confirmed'],
+            'password' => ['required', 'string', Password::min(8)->mixedCase()->symbols(), 'confirmed'],
         ]);
 
         $user = User::create([
@@ -69,13 +71,22 @@ class AuthController extends Controller
             'password' => ['required', 'string'],
         ]);
 
+        $throttleKey = sprintf('user-login:%s|%s', strtolower($data['email']), $request->ip());
+        if (RateLimiter::tooManyAttempts($throttleKey, 5)) {
+            throw ValidationException::withMessages([
+                'email' => ['Too many login attempts. Please try again in 1 minute.'],
+            ]);
+        }
+
         $user = User::where('email', $data['email'])->first();
 
         if (! $user || ! Hash::check($data['password'], $user->password)) {
+            RateLimiter::hit($throttleKey, 60);
             throw ValidationException::withMessages([
                 'email' => ['The provided credentials are incorrect.'],
             ]);
         }
+        RateLimiter::clear($throttleKey);
 
         $token = $user->createToken('auth_token')->plainTextToken;
 
@@ -100,6 +111,53 @@ class AuthController extends Controller
             'auto_recharge_enabled' => (bool) $request->user()->auto_recharge_enabled,
             'auto_recharge_package_id' => $request->user()->auto_recharge_package_id,
             'created_at' => $request->user()->created_at,
+        ]);
+    }
+
+    public function updateProfile(Request $request): JsonResponse
+    {
+        $user = $request->user();
+
+        $validated = $request->validate([
+            'name' => ['sometimes', 'required', 'string', 'max:255'],
+            'email' => ['sometimes', 'required', 'email', 'max:255', 'unique:users,email,'.$user->id],
+            'current_password' => ['nullable', 'required_with:password', 'string'],
+            'password' => ['nullable', 'string', Password::min(8)->mixedCase()->symbols(), 'confirmed'],
+        ]);
+
+        if (isset($validated['password'])) {
+            if (! Hash::check((string) ($validated['current_password'] ?? ''), $user->password)) {
+                throw ValidationException::withMessages([
+                    'current_password' => ['The current password is incorrect.'],
+                ]);
+            }
+
+            $user->password = Hash::make($validated['password']);
+        }
+
+        if (isset($validated['name'])) {
+            $user->name = $validated['name'];
+        }
+
+        if (isset($validated['email'])) {
+            $user->email = $validated['email'];
+        }
+
+        $user->save();
+
+        return response()->json([
+            'message' => 'Profile updated successfully.',
+            'user' => [
+                'id' => $user->id,
+                'name' => $user->name,
+                'email' => $user->email,
+                'credit_balance' => $user->credit_balance,
+                'stripe_customer_id' => $user->stripe_customer_id,
+                'stripe_payment_method_id' => $user->stripe_payment_method_id,
+                'auto_recharge_enabled' => (bool) $user->auto_recharge_enabled,
+                'auto_recharge_package_id' => $user->auto_recharge_package_id,
+                'created_at' => $user->created_at,
+            ],
         ]);
     }
 

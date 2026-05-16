@@ -7,7 +7,6 @@ const PRIVATE_LINKS = [
   { label: 'Projects', path: ROUTES.dashboardProjects },
   { label: 'Credits', path: ROUTES.dashboardCredits },
   { label: 'Pricing', path: ROUTES.dashboardPricing },
-  { label: 'Reports Hub', path: '/feature5' },
 ];
 
 export default function Navbar() {
@@ -16,8 +15,11 @@ export default function Navbar() {
   const { isAuthenticated, logout, user } = useAuth();
 
   async function handleLogout() {
-    await logout();
-    navigate(ROUTES.login);
+    try {
+      await logout();
+    } finally {
+      navigate(ROUTES.login, { replace: true });
+    }
   }
 
   return (

@@ -42,7 +42,7 @@ class AdminUserController extends Controller
     {
         $platformDefaults = AdminSettingsController::getPlatformDefaults();
         $passwordRule = AdminSettingsController::requireStrongPasswords()
-            ? Password::min(8)->mixedCase()->numbers()
+            ? Password::min(8)->mixedCase()->symbols()
             : Password::min(8);
 
         $validated = $request->validate([

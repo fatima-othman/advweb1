@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import api from '../../services/api'
 
 const questions = [
   {
@@ -107,30 +108,18 @@ export default function CreateProject() {
 
   async function handleFinish() {
     try {
-      const response = await fetch('http://127.0.0.1:8000/api/projects', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json',
-          'X-Requested-With': 'XMLHttpRequest',
-        },
-        body: JSON.stringify({
-          name,
-          business_type: businessType,
-          description,
-          stage: answers.stage,
-          employees: answers.employees,
-          budget: answers.budget,
-          market: answers.market,
-          competitors: answers.competitors,
-          language: answers.language,
-        }),
+      const response = await api.post('/projects', {
+        name,
+        business_type: businessType,
+        description,
+        stage: answers.stage,
+        employees: answers.employees,
+        budget: answers.budget,
+        market: answers.market,
+        competitors: answers.competitors,
+        language: answers.language,
       })
-      const data = await response.json()
-
-      if (!response.ok) {
-        throw new Error(data?.message || 'Project was not saved')
-      }
+      const data = response?.data || {}
 
       const project = data.project || data
       if (!project?.id) {

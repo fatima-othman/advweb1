@@ -1,7 +1,17 @@
-import { useState } from "react";
-
+import { useEffect, useMemo, useState } from "react";
+import api from "../../services/api";
+import { useAuth } from "../../context/AuthContext";
 import SectionTitle from "../../components/SectionTitle";
 import Breadcrumbs from "../../components/Breadcrumbs";
+import { requestPasswordReset } from "../feature2/services/feature2Service";
+
+function formatMemberSince(value) {
+  if (!value) return "-";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "-";
+  return date.toLocaleDateString("en-US", { month: "long", year: "numeric" });
+}
+
 function SettingsPage({
   TopActionBar,
   darkMode,
@@ -12,12 +22,14 @@ function SettingsPage({
   addNotification,
   fakeDownload,
 }) {
+  const { user, syncUser } = useAuth();
+
   const [isEditingProfile, setIsEditingProfile] = useState(false);
   const [profileData, setProfileData] = useState({
-    fullName: "Sara’s",
-    email: "Sara’s@strategai.com",
+    fullName: "",
+    email: "",
     role: "Strategy Manager",
-    memberSince: "March 2025",
+    memberSince: "-",
   });
 
   const [preferences, setPreferences] = useState({
@@ -28,22 +40,129 @@ function SettingsPage({
 
   const [security, setSecurity] = useState({
     twoFactorEnabled: false,
-    lastLogin: "Today, 3:48 AM",
+    lastLogin: "-",
   });
 
-  const handleSaveProfile = () => {
-    setIsEditingProfile(false);
-    showToast("success", "Profile updated", "Your profile changes were saved.");
-    addNotification("Profile updated", "Your account profile was updated successfully.");
+  const [savingProfile, setSavingProfile] = useState(false);
+  const [showPasswordForm, setShowPasswordForm] = useState(false);
+  const [changingPassword, setChangingPassword] = useState(false);
+  const [forgotMode, setForgotMode] = useState(false);
+  const [sendingResetCode, setSendingResetCode] = useState(false);
+  const [passwordForm, setPasswordForm] = useState({
+    current_password: "",
+    password: "",
+    password_confirmation: "",
+  });
+  const [forgotPasswordForm, setForgotPasswordForm] = useState({
+    email: "",
+  });
+
+  useEffect(() => {
+    const localLastLoginKey = `strategai_last_login_at_${user?.id || user?.email || "guest"}`;
+    let localLastLogin = localStorage.getItem(localLastLoginKey);
+    if (!localLastLogin && user) {
+      localLastLogin = new Date().toISOString();
+      localStorage.setItem(localLastLoginKey, localLastLogin);
+    }
+
+    setProfileData({
+      fullName: user?.name || "",
+      email: user?.email || "",
+      role: "Strategy Manager",
+      memberSince: formatMemberSince(user?.created_at),
+    });
+
+    setSecurity((current) => ({
+      ...current,
+      lastLogin: localLastLogin
+        ? new Date(localLastLogin).toLocaleString("en-US", {
+            month: "short",
+            day: "numeric",
+            year: "numeric",
+            hour: "numeric",
+            minute: "2-digit",
+          })
+        : "-",
+    }));
+  }, [user]);
+
+  const initial = useMemo(
+    () => ({ name: user?.name || "", email: user?.email || "" }),
+    [user?.name, user?.email],
+  );
+
+  const handleSaveProfile = async () => {
+    if (!profileData.fullName.trim() || !profileData.email.trim()) {
+      showToast("error", "Missing fields", "Name and email are required.");
+      return;
+    }
+
+    setSavingProfile(true);
+    try {
+      const { data } = await api.put("/profile", {
+        name: profileData.fullName.trim(),
+        email: profileData.email.trim(),
+      });
+
+      if (data?.user) {
+        syncUser(data.user);
+      }
+
+      setIsEditingProfile(false);
+      showToast("success", "Profile updated", "Your profile changes were saved.");
+      addNotification("Profile updated", "Your account profile was updated successfully.");
+    } catch (error) {
+      showToast("error", "Update failed", error?.response?.data?.message || "Could not update profile.");
+    } finally {
+      setSavingProfile(false);
+    }
+  };
+
+  const handleChangePassword = async () => {
+    if (!passwordForm.current_password || !passwordForm.password || !passwordForm.password_confirmation) {
+      showToast("error", "Missing fields", "Please fill all password fields.");
+      return;
+    }
+
+    setChangingPassword(true);
+    try {
+      await api.put("/profile", passwordForm);
+      setPasswordForm({ current_password: "", password: "", password_confirmation: "" });
+      setShowPasswordForm(false);
+      showToast("success", "Password updated", "Your password was changed successfully.");
+      addNotification("Security update", "Your account password was changed.");
+    } catch (error) {
+      const message =
+        error?.response?.data?.errors?.current_password?.[0] ||
+        error?.response?.data?.errors?.password?.[0] ||
+        error?.response?.data?.message ||
+        "Could not change password.";
+      showToast("error", "Password update failed", message);
+    } finally {
+      setChangingPassword(false);
+    }
+  };
+
+  const handleSendResetCodeInline = async () => {
+    if (!forgotPasswordForm.email.trim()) {
+      showToast("error", "Missing email", "Please enter your email first.");
+      return;
+    }
+
+    setSendingResetCode(true);
+    try {
+      const result = await requestPasswordReset({ email: forgotPasswordForm.email.trim() });
+      showToast("success", "Reset link sent", result?.message || "Password reset link sent to your email.");
+    } catch (error) {
+      showToast("error", "Send failed", error?.message || "Could not send reset code.");
+    } finally {
+      setSendingResetCode(false);
+    }
   };
 
   const handleExportData = () => {
     fakeDownload("Account data");
     addNotification("Export data", "Your account data export was prepared.");
-  };
-
-  const handleLogout = () => {
-    showToast("success", "Logged out", "Logout action is ready for backend integration.");
   };
 
   return (
@@ -62,7 +181,7 @@ function SettingsPage({
           <div className="flex items-start justify-between gap-4 mb-6">
             <div className="flex items-center gap-4">
               <div className="h-16 w-16 rounded-2xl bg-[#355872] text-white flex items-center justify-center text-2xl font-bold">
-                S
+                {(profileData.fullName || "S").slice(0, 1).toUpperCase()}
               </div>
               <div>
                 <h3 className={`text-xl font-semibold ${darkMode ? "text-white" : "text-gray-900"}`}>
@@ -82,9 +201,10 @@ function SettingsPage({
                   setIsEditingProfile(true);
                 }
               }}
-              className="bg-[#355872] hover:bg-[#7AAACE] text-white px-4 py-2 rounded-xl transition"
+              disabled={savingProfile}
+              className="bg-[#355872] hover:bg-[#7AAACE] text-white px-4 py-2 rounded-xl transition disabled:opacity-50"
             >
-              {isEditingProfile ? "Save Changes" : "Edit Profile"}
+              {isEditingProfile ? (savingProfile ? "Saving..." : "Save Changes") : "Edit Profile"}
             </button>
           </div>
 
@@ -143,13 +263,22 @@ function SettingsPage({
               <div className="flex gap-3 pt-2">
                 <button
                   onClick={handleSaveProfile}
-                  className="bg-[#355872] hover:bg-[#7AAACE] text-white px-4 py-2 rounded-xl transition"
+                  disabled={savingProfile}
+                  className="bg-[#355872] hover:bg-[#7AAACE] text-white px-4 py-2 rounded-xl transition disabled:opacity-50"
                 >
-                  Save
+                  {savingProfile ? "Saving..." : "Save"}
                 </button>
 
                 <button
-                  onClick={() => setIsEditingProfile(false)}
+                  onClick={() => {
+                    setIsEditingProfile(false);
+                    setProfileData({
+                      fullName: initial.name,
+                      email: initial.email,
+                      role: "Strategy Manager",
+                      memberSince: formatMemberSince(user?.created_at),
+                    });
+                  }}
                   className={`px-4 py-2 rounded-xl border transition ${
                     darkMode
                       ? "border-gray-600 text-gray-100 hover:bg-gray-800"
@@ -256,19 +385,107 @@ function SettingsPage({
                 <p className={`text-sm mt-1 ${mutedText}`}>Update your password for better account security</p>
               </div>
               <button
-                onClick={() => {
-                  showToast("success", "Change password", "Password change flow is ready for backend integration.");
-                  addNotification("Security update", "Password change action was opened.");
-                }}
+                onClick={() => setShowPasswordForm((prev) => !prev)}
                 className={`px-4 py-2 rounded-xl border transition ${
                   darkMode
                     ? "border-gray-600 text-gray-100 hover:bg-gray-800"
                     : "border-gray-200 text-gray-700 hover:bg-gray-50"
                 }`}
               >
-                Change
+                {showPasswordForm ? "Close" : "Change"}
               </button>
             </div>
+
+            {showPasswordForm ? (
+              <div className={`rounded-2xl border p-4 ${darkMode ? "bg-[#0F172A] border-gray-700" : "bg-[#F7F8F0] border-gray-200"}`}>
+                {!forgotMode ? (
+                  <div className="grid grid-cols-1 gap-3">
+                    <input
+                      type="password"
+                      placeholder="Current password"
+                      value={passwordForm.current_password}
+                      onChange={(event) => setPasswordForm((current) => ({ ...current, current_password: event.target.value }))}
+                      className={`w-full border rounded-xl px-4 py-3 ${
+                        darkMode ? "bg-[#0b1322] border-gray-700 text-white" : "bg-white border-gray-200 text-gray-900"
+                      }`}
+                    />
+                    <input
+                      type="password"
+                      placeholder="New password"
+                      value={passwordForm.password}
+                      onChange={(event) => setPasswordForm((current) => ({ ...current, password: event.target.value }))}
+                      className={`w-full border rounded-xl px-4 py-3 ${
+                        darkMode ? "bg-[#0b1322] border-gray-700 text-white" : "bg-white border-gray-200 text-gray-900"
+                      }`}
+                    />
+                    <input
+                      type="password"
+                      placeholder="Confirm new password"
+                      value={passwordForm.password_confirmation}
+                      onChange={(event) => setPasswordForm((current) => ({ ...current, password_confirmation: event.target.value }))}
+                      className={`w-full border rounded-xl px-4 py-3 ${
+                        darkMode ? "bg-[#0b1322] border-gray-700 text-white" : "bg-white border-gray-200 text-gray-900"
+                      }`}
+                    />
+                    <button
+                      onClick={handleChangePassword}
+                      disabled={changingPassword}
+                      className="bg-[#355872] hover:bg-[#7AAACE] text-white px-4 py-2 rounded-xl transition disabled:opacity-50"
+                    >
+                      {changingPassword ? "Changing..." : "Save Password"}
+                    </button>
+                    <div>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setForgotMode(true);
+                          setForgotPasswordForm((prev) => ({ ...prev, email: profileData.email || prev.email }));
+                        }}
+                        className={`text-sm underline ${darkMode ? "text-[#9CD5FF]" : "text-[#355872]"}`}
+                      >
+                        Forgot password?
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 gap-3">
+                    <input
+                      type="email"
+                      placeholder="Email"
+                      value={forgotPasswordForm.email}
+                      onChange={(event) => setForgotPasswordForm((current) => ({ ...current, email: event.target.value }))}
+                      className={`w-full border rounded-xl px-4 py-3 ${
+                        darkMode ? "bg-[#0b1322] border-gray-700 text-white" : "bg-white border-gray-200 text-gray-900"
+                      }`}
+                    />
+                    <p className={`text-sm ${mutedText}`}>
+                      We will send a secure reset link to your email. Open it to set a new password.
+                    </p>
+                    <div className="flex gap-2">
+                      <button
+                        type="button"
+                        onClick={handleSendResetCodeInline}
+                        disabled={sendingResetCode}
+                        className="flex-1 bg-[#355872] hover:bg-[#7AAACE] text-white px-4 py-2 rounded-xl transition disabled:opacity-50"
+                      >
+                        {sendingResetCode ? "Sending..." : "Send Reset Link"}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setForgotMode(false)}
+                        className={`px-4 py-2 rounded-xl border transition ${
+                          darkMode
+                            ? "border-gray-600 text-gray-100 hover:bg-gray-800"
+                            : "border-gray-200 text-gray-700 hover:bg-gray-50"
+                        }`}
+                      >
+                        Back
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            ) : null}
 
             <div className="flex items-center justify-between gap-4">
               <div>
@@ -308,25 +525,13 @@ function SettingsPage({
             Quick Actions
           </h3>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 gap-4">
             <button
               onClick={handleExportData}
               className="bg-[#355872] hover:bg-[#7AAACE] text-white px-5 py-4 rounded-2xl transition text-left"
             >
               <p className="font-semibold">Export Data</p>
               <p className="text-sm text-white/80 mt-1">Download your account summary and settings</p>
-            </button>
-
-            <button
-              onClick={handleLogout}
-              className={`px-5 py-4 rounded-2xl transition text-left border ${
-                darkMode
-                  ? "border-red-400 text-red-300 hover:bg-red-950/30"
-                  : "border-red-200 text-red-500 hover:bg-red-50"
-              }`}
-            >
-              <p className="font-semibold">Logout</p>
-              <p className="text-sm mt-1 opacity-80">Sign out from your current session</p>
             </button>
           </div>
         </div>

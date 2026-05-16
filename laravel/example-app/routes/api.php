@@ -18,6 +18,7 @@ use App\Http\Controllers\AdminSettingsController;
 use App\Http\Controllers\AdminUserController;
 use App\Http\Controllers\ProjectController as Feature3ProjectController;
 use App\Http\Controllers\ReportController as Feature3ReportController;
+use App\Http\Controllers\UserReviewController;
 use App\Models\Notification;
 use App\Models\Report;
 use Illuminate\Http\Request;
@@ -29,17 +30,6 @@ Route::post('/stripe/webhook', [StripeWebhookController::class, 'handle']);
 Route::post('/forgot-password', [PasswordResetController::class, 'forgotPassword']);
 Route::post('/reset-password', [PasswordResetController::class, 'resetPassword']);
 
-Route::apiResource('projects', Feature3ProjectController::class);
-Route::post('reports/generate', [Feature3ReportController::class, 'generate']);
-Route::get('reports', [Feature3ReportController::class, 'index']);
-Route::get('reports/{id}', [Feature3ReportController::class, 'show']);
-
-Route::get('/comparison/{projectId}', function ($projectId) {
-    return Report::with('project')
-        ->where('project_id', $projectId)
-        ->orderBy('id', 'asc')
-        ->get();
-});
 
 Route::get('/notifications', function () {
     return Notification::latest()->get();
@@ -99,9 +89,14 @@ Route::prefix('admin')->group(function (): void {
 Route::middleware('auth:sanctum')->group(function () {
     Route::get('/me', [AuthController::class, 'me']);
     Route::get('/user/me', [AuthController::class, 'me']);
+    Route::put('/profile', [AuthController::class, 'updateProfile']);
     Route::post('/logout', [AuthController::class, 'logout']);
 
+    Route::apiResource('projects', Feature3ProjectController::class);
     Route::apiResource('reports', ApiReportController::class)->except(['index', 'show']);
+    Route::post('reports/generate', [Feature3ReportController::class, 'generate']);
+    Route::get('reports', [Feature3ReportController::class, 'index']);
+    Route::get('reports/{id}', [Feature3ReportController::class, 'show']);
     Route::apiResource('credit-packages', CreditPackageController::class);
     Route::apiResource('transactions', TransactionController::class);
 
@@ -128,4 +123,14 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/strategy-reports', [StrategyReportController::class, 'index']);
     Route::post('/strategy-reports', [StrategyReportController::class, 'store']);
     Route::get('/strategy-reports/{strategyReport}', [StrategyReportController::class, 'show']);
+    Route::get('/reviews/my', [UserReviewController::class, 'index']);
+    Route::post('/reviews', [UserReviewController::class, 'store']);
+
+    Route::get('/comparison/{projectId}', function (Request $request, $projectId) {
+        return Report::with('project')
+            ->where('project_id', $projectId)
+            ->where('user_id', $request->user()->id)
+            ->orderBy('id', 'asc')
+            ->get();
+    });
 });

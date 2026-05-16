@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
+import api from '../../services/api'
 
 const businessTypes = [
   { label: 'Restaurant / Café', icon: '🍽' },
@@ -86,11 +87,9 @@ export default function EditProject() {
   const [loading, setLoading]       = useState(true)
 
   useEffect(() => {
-    fetch(`http://127.0.0.1:8000/api/projects/${id}`, {
-      headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' }
-    })
-      .then(r => r.json())
-      .then(d => {
+    api.get(`/projects/${id}`)
+      .then((response) => {
+        const d = response?.data || {}
         setName(d.name || '')
         setBusiness(d.business_type || '')
         setDesc(d.description || '')
@@ -108,17 +107,9 @@ export default function EditProject() {
   async function handleSave() {
     setSaving(true)
     try {
-      await fetch(`http://127.0.0.1:8000/api/projects/${id}`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json',
-          'X-Requested-With': 'XMLHttpRequest',
-        },
-        body: JSON.stringify({
-          name, business_type: businessType, description,
-          stage, employees, budget, market, competitors, language,
-        }),
+      await api.put(`/projects/${id}`, {
+        name, business_type: businessType, description,
+        stage, employees, budget, market, competitors, language,
       })
       navigate('/projects')
     } catch (e) {

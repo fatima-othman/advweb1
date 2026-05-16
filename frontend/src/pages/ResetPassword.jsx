@@ -1,17 +1,18 @@
-import { useMemo, useState } from 'react';
-import { Link, useSearchParams } from 'react-router-dom';
+import { useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { ROUTES } from '../config/routes';
 import { submitPasswordReset } from '../services/feature2Service';
+import { validatePassword } from '../utils/validators';
 import '../styles/feature2.css';
 
 const ResetPassword = () => {
   const [searchParams] = useSearchParams();
-  const token = useMemo(() => searchParams.get('token') || '', [searchParams]);
-  const emailFromQuery = useMemo(() => searchParams.get('email') || '', [searchParams]);
-
+  const tokenFromUrl = searchParams.get('token') || '';
+  const emailFromUrl = searchParams.get('email') || '';
   const [formData, setFormData] = useState({
-    email: emailFromQuery,
-    token,
+    email: emailFromUrl,
+    token: tokenFromUrl,
     password: '',
     password_confirmation: '',
   });
@@ -29,13 +30,14 @@ const ResetPassword = () => {
     setMessage('');
     setError('');
 
-    if (!formData.token || !formData.email) {
-      setError('Token and email are required in the reset link.');
+    if (!formData.email || !formData.token) {
+      setError('Email and reset token are required. Please open the reset link from your email.');
       return;
     }
 
-    if (formData.password.length < 8) {
-      setError('Password must be at least 8 characters.');
+    const passwordError = validatePassword(formData.password);
+    if (passwordError) {
+      setError(passwordError);
       return;
     }
 

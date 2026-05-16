@@ -1,7 +1,9 @@
+﻿import { useMemo } from "react";
 import TopActionBar from "../../components/TopActionBar";
 import Breadcrumbs from "../../components/Breadcrumbs";
 import SectionTitle from "../../components/SectionTitle";
 import MiniBarChart from "../../components/MiniBarChart";
+
 function DashboardPage({
   darkMode,
   showNotifications,
@@ -25,24 +27,34 @@ function DashboardPage({
   activities,
   userName = "there",
 }) {
+  const latestReport = useMemo(() => {
+    if (!Array.isArray(reports) || reports.length === 0) return null;
+
+    return [...reports].sort((a, b) => {
+      const aTime = new Date(a.created_at || a.date || 0).getTime();
+      const bTime = new Date(b.created_at || b.date || 0).getTime();
+      if (aTime !== bTime) return bTime - aTime;
+      return (b.id || 0) - (a.id || 0);
+    })[0];
+  }, [reports]);
+
   return (
     <>
-     <TopActionBar
-  darkMode={darkMode}
-  showNotifications={showNotifications}
-  setShowNotifications={setShowNotifications}
-  unreadNotifications={unreadNotifications}
-  notifications={notifications}
-  mutedText={mutedText}
-  markAllNotificationsRead={markAllNotificationsRead}
-/>
+      <TopActionBar
+        darkMode={darkMode}
+        showNotifications={showNotifications}
+        setShowNotifications={setShowNotifications}
+        unreadNotifications={unreadNotifications}
+        notifications={notifications}
+        mutedText={mutedText}
+        markAllNotificationsRead={markAllNotificationsRead}
+      />
+
       <Breadcrumbs items={["Dashboard"]} darkMode={darkMode} />
 
       <SectionTitle
         title={`Welcome back, ${userName}!`}
-
-
-        subtitle="Here’s a summary of your strategy activity"
+        subtitle="Here's a summary of your strategy activity"
         darkMode={darkMode}
         action={
           <button
@@ -61,9 +73,7 @@ function DashboardPage({
             className={`rounded-2xl border p-6 shadow-sm transition hover:-translate-y-1 ${panelBg}`}
           >
             <div className="text-xl mb-4">{item.icon}</div>
-            <p className="text-xs font-semibold tracking-wide uppercase mb-2 text-gray-400">
-              {item.title}
-            </p>
+            <p className="text-xs font-semibold tracking-wide uppercase mb-2 text-gray-400">{item.title}</p>
             <h3 className={`text-3xl font-bold ${darkMode ? "text-white" : "text-gray-900"}`}>{item.value}</h3>
             <p className={`text-sm mt-2 ${item.subColor}`}>{item.sub}</p>
           </div>
@@ -116,9 +126,7 @@ function DashboardPage({
               {recentlyViewed.map((item, index) => (
                 <div
                   key={`${item.type}-${item.title}-${index}`}
-                  className={`rounded-2xl border p-4 ${
-                    darkMode ? "bg-[#0F172A] border-gray-700" : "bg-[#F7F8F0] border-gray-200"
-                  }`}
+                  className={`rounded-2xl border p-4 ${darkMode ? "bg-[#0F172A] border-gray-700" : "bg-[#F7F8F0] border-gray-200"}`}
                 >
                   <p className={`font-medium ${darkMode ? "text-white" : "text-gray-900"}`}>{item.title}</p>
                   <p className={`text-sm mt-1 ${mutedText}`}>{item.subtitle}</p>
@@ -134,59 +142,65 @@ function DashboardPage({
               <h3 className={`text-lg font-semibold ${darkMode ? "text-white" : "text-gray-900"}`}>
                 Last Report Generated
               </h3>
-              <p className={`text-sm ${mutedText}`}>
-                Quick access to your most recent strategy
-              </p>
+              <p className={`text-sm ${mutedText}`}>Quick access to your most recent strategy</p>
             </div>
             <button
               onClick={() => navigate("/history")}
               className={`px-4 py-2 rounded-xl border text-sm transition ${
-                darkMode
-                  ? "border-gray-600 text-gray-100 hover:bg-gray-800"
-                  : "border-gray-200 hover:bg-gray-50"
+                darkMode ? "border-gray-600 text-gray-100 hover:bg-gray-800" : "border-gray-200 hover:bg-gray-50"
               }`}
             >
               View All
             </button>
           </div>
 
-          <div className={`rounded-2xl border p-5 flex flex-col md:flex-row md:items-center md:justify-between gap-4 ${
-            darkMode ? "bg-[#0F172A] border-gray-700" : "bg-[#F7F8F0] border-gray-200"
-          }`}>
-            <div className="flex items-start gap-4">
-              <div className="h-14 w-14 rounded-2xl bg-[#355872] text-white flex items-center justify-center text-2xl">
-                📊
-              </div>
-              <div>
-                <h4 className={`font-semibold text-lg ${darkMode ? "text-white" : "text-gray-900"}`}>
-                  Sara’s Skincare Store
-                </h4>
-                <div className={`flex flex-wrap gap-3 text-sm mt-2 ${mutedText}`}>
-                  <span>E-commerce</span>
-                  <span>Arabic</span>
-                  <span>7 sections</span>
+          <div
+            className={`rounded-2xl border p-5 flex flex-col md:flex-row md:items-center md:justify-between gap-4 ${
+              darkMode ? "bg-[#0F172A] border-gray-700" : "bg-[#F7F8F0] border-gray-200"
+            }`}
+          >
+            {latestReport ? (
+              <div className="flex items-start gap-4">
+                <div className="h-14 w-14 rounded-2xl bg-[#355872] text-white flex items-center justify-center text-lg font-semibold">
+                  RP
                 </div>
-                <div className={`flex flex-wrap gap-3 text-sm mt-2 ${mutedText}`}>
-                  <span>📅 Apr 27, 2025</span>
-                  <span>💰 $400/mo</span>
-                  <span>📍 Saudi Arabia</span>
+                <div>
+                  <h4 className={`font-semibold text-lg ${darkMode ? "text-white" : "text-gray-900"}`}>
+                    {latestReport.name || "Latest Report"}
+                  </h4>
+                  <div className={`flex flex-wrap gap-3 text-sm mt-2 ${mutedText}`}>
+                    <span>{latestReport.project?.name || latestReport.project || "Project"}</span>
+                    <span>{latestReport.type || "Strategy"}</span>
+                    <span>{latestReport.sections || latestReport.sections_count || 1} sections</span>
+                  </div>
+                  <div className={`flex flex-wrap gap-3 text-sm mt-2 ${mutedText}`}>
+                    <span>{latestReport.date || latestReport.created_at?.slice(0, 10) || "No date"}</span>
+                    <span>Score: {latestReport.score || "-"}</span>
+                  </div>
                 </div>
               </div>
-            </div>
+            ) : (
+              <div className={`text-sm ${mutedText}`}>No report generated yet.</div>
+            )}
 
             <button
+              type="button"
               onClick={() => {
-                setSelectedReport(reports[0]);
+                if (!latestReport) return;
+                setSelectedReport(latestReport);
                 addRecentItem({
                   type: "report",
-                  title: reports[0].name,
-                  subtitle: `${reports[0].project} • ${reports[0].type}`,
+                  title: latestReport.name || "Latest Report",
+                  subtitle: `${latestReport.project?.name || latestReport.project || "Project"} • ${latestReport.type || "Strategy"}`,
                 });
-                navigate("/report-details");
+                navigate(`/reports/${latestReport.id}/view`);
               }}
-              className="bg-[#355872] hover:bg-[#7AAACE] text-white px-5 py-3 rounded-xl transition"
+              disabled={!latestReport}
+              className={`px-5 py-3 rounded-xl transition text-white ${
+                latestReport ? "bg-[#355872] hover:bg-[#7AAACE]" : "bg-gray-400 cursor-not-allowed"
+              }`}
             >
-              View Report →
+              View Report
             </button>
           </div>
         </section>
@@ -207,19 +221,15 @@ function DashboardPage({
             >
               <div className="flex items-center gap-4">
                 <span className={`h-3 w-3 rounded-full ${activity.color}`}></span>
-                <p className={`text-sm md:text-base ${darkMode ? "text-gray-200" : "text-gray-700"}`}>
-                  {activity.text}
-                </p>
+                <p className={`text-sm md:text-base ${darkMode ? "text-gray-200" : "text-gray-700"}`}>{activity.text}</p>
               </div>
-              <span className={`text-sm whitespace-nowrap ${mutedText}`}>
-                {activity.time}
-              </span>
+              <span className={`text-sm whitespace-nowrap ${mutedText}`}>{activity.time}</span>
             </div>
           ))}
         </div>
       </section>
     </>
-   );
+  );
 }
 
 export default DashboardPage;

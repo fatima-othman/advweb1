@@ -6,6 +6,7 @@ use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 
@@ -18,17 +19,30 @@ class AdminAuthController extends Controller
             'password' => ['required', 'string'],
         ]);
 
+        $throttleKey = sprintf('admin-login:%s|%s', strtolower($credentials['email']), $request->ip());
+        if (RateLimiter::tooManyAttempts($throttleKey, 5)) {
+            throw ValidationException::withMessages([
+                'email' => ['Too many login attempts. Please try again in 1 minute.'],
+            ]);
+        }
+
         $adminEmail = env('ADMIN_EMAIL', 'admin@strategai.com');
-        $adminPassword = env('ADMIN_PASSWORD', 'admin12345');
+        $adminPasswordHash = (string) env('ADMIN_PASSWORD_HASH', '');
+        $adminPasswordPlain = (string) env('ADMIN_PASSWORD', '');
+        $passwordMatches = $adminPasswordHash !== ''
+            ? Hash::check($credentials['password'], $adminPasswordHash)
+            : ($adminPasswordPlain !== '' && hash_equals($adminPasswordPlain, $credentials['password']));
 
         if (
             ! hash_equals(strtolower($adminEmail), strtolower($credentials['email'])) ||
-            ! hash_equals($adminPassword, $credentials['password'])
+            ! $passwordMatches
         ) {
+            RateLimiter::hit($throttleKey, 60);
             throw ValidationException::withMessages([
                 'email' => ['The provided admin credentials are invalid.'],
             ]);
         }
+        RateLimiter::clear($throttleKey);
 
         $user = User::firstOrCreate(
             ['email' => $adminEmail],

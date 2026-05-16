@@ -17,8 +17,24 @@ export const validatePassword = (value, { required = true, minLength = 8 } = {})
     return 'Password is required.';
   }
 
-  if (value && value.length < minLength) {
+  if (!value) {
+    return '';
+  }
+
+  if (value.length < minLength) {
     return `Password must be at least ${minLength} characters.`;
+  }
+
+  if (!/[a-z]/.test(value)) {
+    return 'Password must include at least one lowercase letter.';
+  }
+
+  if (!/[A-Z]/.test(value)) {
+    return 'Password must include at least one uppercase letter.';
+  }
+
+  if (!/[^\w\s]/.test(value)) {
+    return 'Password must include at least one symbol.';
   }
 
   return '';

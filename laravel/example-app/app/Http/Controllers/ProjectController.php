@@ -9,7 +9,7 @@ class ProjectController extends Controller
 {
     public function index(Request $request)
     {
-        $projects = Project::where('user_id', 1)
+        $projects = Project::where('user_id', $request->user()->id)
             ->withCount('reports')
             ->orderBy('created_at', 'desc')
             ->get()
@@ -34,7 +34,7 @@ class ProjectController extends Controller
         ]);
 
         $project = Project::create([
-            'user_id' => 1,
+            'user_id' => $request->user()->id,
             'name' => $request->name,
             'business_type' => $request->business_type ?? $request->type,
             'description' => $request->description,
@@ -55,7 +55,7 @@ class ProjectController extends Controller
     public function show($id)
     {
         $project = Project::where('id', $id)
-            ->where('user_id', 1)
+            ->where('user_id', request()->user()->id)
             ->firstOrFail();
 
         $project->type = $project->business_type;
@@ -67,7 +67,7 @@ class ProjectController extends Controller
     public function update(Request $request, $id)
     {
         $project = Project::where('id', $id)
-            ->where('user_id', 1)
+            ->where('user_id', $request->user()->id)
             ->firstOrFail();
 
         $project->fill($request->only([
@@ -101,7 +101,7 @@ class ProjectController extends Controller
     public function destroy($id)
     {
         $project = Project::where('id', $id)
-            ->where('user_id', 1)
+            ->where('user_id', request()->user()->id)
             ->firstOrFail();
 
         $project->delete();

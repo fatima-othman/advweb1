@@ -56,7 +56,6 @@ const PasswordField = ({
           aria-label={visible ? 'Hide password' : 'Show password'}
         >
           <span className="password-toggle-icon"><EyeIcon /></span>
-          <span>{visible ? 'Hide' : 'Show'}</span>
         </button>
       </div>
       {hint ? <p className="form-hint">{hint}</p> : null}

@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import InlineAlert from '../components/InlineAlert';
 import LoadingSpinner from '../components/LoadingSpinner';
 import PageMotion from '../components/PageMotion';
-import { API_BASE_URL } from '../services/api';
+import api from '../services/api';
 import './feature2/styles/credits.css';
 
 const normalizeProject = (project) => ({
@@ -24,6 +24,8 @@ const getStatus = (reports) => {
 
 const DashboardProjects = () => {
   const [projects, setProjects] = useState([]);
+  const [projectRatings, setProjectRatings] = useState({});
+  const [savingRatingProjectId, setSavingRatingProjectId] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [search, setSearch] = useState('');
@@ -37,17 +39,18 @@ const DashboardProjects = () => {
       setError('');
 
       try {
-        const response = await fetch(`${API_BASE_URL}/projects`, {
-          headers: { Accept: 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
-        });
-
-        if (!response.ok) {
-          throw new Error('Failed to load projects.');
-        }
-
-        const data = await response.json();
+        const [projectsResponse, reviewsResponse] = await Promise.all([
+          api.get('/projects'),
+          api.get('/reviews/my'),
+        ]);
+        const data = projectsResponse?.data || [];
+        const ratingsMap = (reviewsResponse?.data?.reviews || []).reduce((acc, review) => {
+          acc[Number(review.project_id)] = Number(review.rating);
+          return acc;
+        }, {});
         if (isMounted) {
           setProjects(data.map(normalizeProject));
+          setProjectRatings(ratingsMap);
         }
       } catch (apiError) {
         if (isMounted) {
@@ -77,6 +80,27 @@ const DashboardProjects = () => {
       return a.name.localeCompare(b.name);
     });
   }, [projects, search, sort]);
+
+  const saveProjectRating = async (project, rating) => {
+    if (!project?.id || !rating) return;
+    const projectId = Number(project.id);
+    const previousRating = projectRatings[projectId];
+    setProjectRatings((prev) => ({ ...prev, [projectId]: rating }));
+    setSavingRatingProjectId(projectId);
+
+    try {
+      await api.post('/reviews', {
+        project_id: projectId,
+        rating,
+        text: `Rated ${project.name} with ${rating} stars.`,
+      });
+    } catch (requestError) {
+      setProjectRatings((prev) => ({ ...prev, [projectId]: previousRating }));
+      setError(requestError?.response?.data?.message || 'Could not save rating.');
+    } finally {
+      setSavingRatingProjectId(null);
+    }
+  };
 
   return (
     <PageMotion>
@@ -147,6 +171,29 @@ const DashboardProjects = () => {
                       <span className="dashboard-project-progress-track">
                         <span style={{ width: `${progress}%` }} />
                       </span>
+                    </div>
+                    <div className="mt-3">
+                      <p className="text-sm text-gray-500 mb-2">Rate this project</p>
+                      <div className="flex items-center gap-1">
+                        {[1, 2, 3, 4, 5].map((star) => {
+                          const currentRating = Number(projectRatings[Number(project.id)] || 0);
+                          const active = star <= currentRating;
+                          return (
+                            <button
+                              key={`${project.id}-star-${star}`}
+                              type="button"
+                              onClick={() => saveProjectRating(project, star)}
+                              disabled={savingRatingProjectId === Number(project.id)}
+                              className={`text-xl leading-none transition ${
+                                active ? 'text-yellow-400' : 'text-gray-300'
+                              }`}
+                              title={`Rate ${star} star${star > 1 ? 's' : ''}`}
+                            >
+                              ★
+                            </button>
+                          );
+                        })}
+                      </div>
                     </div>
                     <div className="dashboard-project-actions">
                       <Link to={`/projects/${project.id}/select`} className="btn-primary">Generate</Link>

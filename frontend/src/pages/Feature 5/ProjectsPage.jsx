@@ -1,6 +1,6 @@
 import axios from "axios";
 import { useEffect, useState } from "react";
-import { API_BASE_URL } from "../../services/api";
+import api from "../../services/api";
 
 
 import SectionTitle from "../../components/SectionTitle";
@@ -42,8 +42,8 @@ function ProjectsPage({
   const [apiData, setApiData] = useState([]);
 
   useEffect(() => {
-    axios
-      .get(`${API_BASE_URL}/projects`)
+    api
+      .get('/projects')
       .then((response) => {
         console.log(response.data);
         setApiData(response.data);
@@ -90,8 +90,8 @@ function ProjectsPage({
   }
 
   if (editingProject) {
-    axios
-      .put(`${API_BASE_URL}/projects/${editingProject.id}`, {
+    api
+      .put(`/projects/${editingProject.id}`, {
         name: newProject.name,
         type: newProject.type,
         country: newProject.country,
@@ -120,8 +120,8 @@ function ProjectsPage({
     return;
   }
 
-  axios
-    .post(`${API_BASE_URL}/projects`, {
+  api
+    .post('/projects', {
       name: newProject.name,
       type: newProject.type,
       country: newProject.country,
@@ -164,8 +164,8 @@ function ProjectsPage({
   const handleDeleteProject = () => {
   if (!projectToDelete) return;
 
-  axios
-    .delete(`${API_BASE_URL}/projects/${projectToDelete.id}`)
+  api
+    .delete(`/projects/${projectToDelete.id}`)
     .then(() => {
       const deletedName = projectToDelete.name;
 

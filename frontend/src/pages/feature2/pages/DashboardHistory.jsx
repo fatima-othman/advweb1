@@ -4,6 +4,7 @@ import EmptyState from '../../../components/EmptyState';
 import InlineAlert from '../../../components/InlineAlert';
 import LoadingSpinner from '../../../components/LoadingSpinner';
 import PageMotion from '../../../components/PageMotion';
+import { useAuth } from '../../../context/AuthContext';
 import { confirmCheckoutSession, getTransactions } from '../services/feature2Service';
 import '../styles/credits.css';
 
@@ -40,6 +41,7 @@ const formatStatus = (value) => {
 };
 
 const DashboardHistory = () => {
+  const { refreshUser } = useAuth();
   const [searchParams, setSearchParams] = useSearchParams();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -56,6 +58,7 @@ const DashboardHistory = () => {
         const sessionId = searchParams.get('session_id');
         if (sessionId) {
           await confirmCheckoutSession({ session_id: sessionId });
+          await refreshUser().catch(() => null);
           setSearchParams((prev) => {
             const next = new URLSearchParams(prev);
             next.delete('session_id');
@@ -65,14 +68,15 @@ const DashboardHistory = () => {
 
         let allTransactions = await getTransactions();
 
-        const pendingMockSessions = allTransactions
-          .filter((row) => row?.status === 'pending' && String(row?.stripe_checkout_session_id || '').startsWith('mock_'))
+        const pendingSessions = allTransactions
+          .filter((row) => row?.status === 'pending' && String(row?.stripe_checkout_session_id || '').trim() !== '')
           .map((row) => row.stripe_checkout_session_id);
 
-        if (pendingMockSessions.length > 0) {
-          await Promise.all(
-            pendingMockSessions.map((sid) => confirmCheckoutSession({ session_id: sid })),
+        if (pendingSessions.length > 0) {
+          await Promise.allSettled(
+            pendingSessions.map((sid) => confirmCheckoutSession({ session_id: sid })),
           );
+          await refreshUser().catch(() => null);
           allTransactions = await getTransactions();
         }
 
@@ -196,4 +200,3 @@ const DashboardHistory = () => {
 };
 
 export default DashboardHistory;
-

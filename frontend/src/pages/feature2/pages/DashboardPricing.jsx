@@ -164,9 +164,10 @@ const DashboardPricing = () => {
 
     try {
       const origin = window.location.origin;
+      const successUrl = `${origin}${ROUTES.dashboardHistory}?session_id={CHECKOUT_SESSION_ID}`;
       const result = await createCheckoutSession({
         credit_package_id: selectedPlan.id,
-        success_url: `${origin}${ROUTES.dashboardHistory}`,
+        success_url: successUrl,
         cancel_url: `${origin}${ROUTES.dashboardPricing}`,
       });
 
@@ -388,4 +389,3 @@ const DashboardPricing = () => {
 };
 
 export default DashboardPricing;
-

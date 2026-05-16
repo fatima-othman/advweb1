@@ -92,17 +92,17 @@ const AppRouter = () => {
           />
           <Route
             path={ROUTES.forgotPassword}
-            element={isAuthenticated ? <Navigate to={ROUTES.dashboard} replace /> : <ForgotPassword />}
+            element={<ForgotPassword />}
           />
           <Route
             path={ROUTES.resetPassword}
-            element={isAuthenticated ? <Navigate to={ROUTES.dashboard} replace /> : <ResetPassword />}
+            element={<ResetPassword />}
           />
           <Route
             path={ROUTES.dashboard}
             element={(
               <ProtectedRoute>
-                <DashboardPage />
+                <Navigate to="/feature5/dashboard" replace />
               </ProtectedRoute>
             )}
           />
@@ -290,5 +290,3 @@ const AppRouter = () => {
 };
 
 export default AppRouter;
-
-

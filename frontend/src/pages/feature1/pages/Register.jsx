@@ -169,7 +169,7 @@ const Register = () => {
                 onBlur={handleBlur}
                 autoComplete="new-password"
                 error={errors.password}
-                hint="Use at least 8 characters for better security."
+                hint="Use at least 8 characters with uppercase, lowercase, and a symbol."
               />
 
               <PasswordField
@@ -216,4 +216,3 @@ const Register = () => {
 };
 
 export default Register;
-

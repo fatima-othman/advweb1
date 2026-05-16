@@ -6,7 +6,12 @@ function TopActionBar({
   notifications,
   mutedText,
   markAllNotificationsRead,
+  showNotificationsUI = false,
 }) {
+  if (!showNotificationsUI) {
+    return null;
+  }
+
   return (
     <div className="flex items-center justify-end gap-3 mb-6 relative">
       <div className="relative">

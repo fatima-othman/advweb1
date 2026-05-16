@@ -6,6 +6,7 @@ import InlineAlert from '../../../components/InlineAlert';
 import LoadingSpinner from '../../../components/LoadingSpinner';
 import PageMotion from '../../../components/PageMotion';
 import { ROUTES } from '../../../config/routes';
+import { useAuth } from '../../../context/AuthContext';
 import { getCreditPackages, getCreditsOverview, updateAutoRechargeSettings } from '../services/feature2Service';
 import '../styles/credits.css';
 
@@ -32,6 +33,7 @@ const formatCredits = (value) => {
 };
 
 const DashboardCredits = () => {
+  const { syncUser } = useAuth();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [balance, setBalance] = useState(0);
@@ -60,6 +62,9 @@ const DashboardCredits = () => {
         }
 
         setBalance(Number(user?.credit_balance || 0));
+        if (user) {
+          syncUser(user);
+        }
         setRecentActivity(transactions.slice(0, 8));
         setAutoRechargeEnabled(Boolean(user?.auto_recharge_enabled));
         setAutoRechargePackageId(user?.auto_recharge_package_id ? String(user.auto_recharge_package_id) : '');
@@ -96,7 +101,7 @@ const DashboardCredits = () => {
 
   const totalCreditsPurchased = useMemo(
     () => recentActivity
-      .filter((row) => Number(row.amount || 0) > 0 && Number(row.credits || 0) > 0)
+      .filter((row) => Number(row.amount || 0) > 0 && Number(row.credits || 0) > 0 && row?.status === 'completed')
       .reduce((sum, row) => sum + Number(row.credits || 0), 0),
     [recentActivity],
   );
@@ -244,4 +249,3 @@ const DashboardCredits = () => {
 };
 
 export default DashboardCredits;
-

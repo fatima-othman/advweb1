@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
-import { API_BASE_URL } from '../../services/api'
+import api from '../../services/api'
 
 const STAGE_COLORS = {
   Idea:      { bg: 'rgba(156,213,255,0.15)', text: '#355872', dot: '#9CD5FF' },
@@ -62,12 +62,15 @@ export default function ProjectsList() {
   const [loading, setLoading]   = useState(true)
 
   useEffect(() => {
-    fetch(`${API_BASE_URL}/projects`, {
-      headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' }
-    })
-      .then(res => res.json())
-      .then(data => { setProjects(data); setLoading(false) })
-      .catch(err => { console.error(err); setLoading(false) })
+    api.get('/projects')
+      .then((response) => {
+        setProjects(response?.data || [])
+        setLoading(false)
+      })
+      .catch((err) => {
+        console.error(err)
+        setLoading(false)
+      })
   }, [])
 
   return (

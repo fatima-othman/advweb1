@@ -5,11 +5,25 @@ import { getCurrentUser, loginUser, logoutUser, registerUser } from '../services
 import { storage } from '../utils/storage';
 
 const AuthContext = createContext(null);
+const LAST_LOGIN_KEY_PREFIX = 'strategai_last_login_at_';
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(storage.getUser());
   const [token, setToken] = useState(storage.getToken());
   const [loading, setLoading] = useState(true);
+
+  const syncUser = useCallback((nextUser) => {
+    if (!nextUser) {
+      storage.removeUser();
+      setUser(null);
+      return null;
+    }
+
+    const mergedUser = { ...(storage.getUser() || {}), ...nextUser };
+    storage.setUser(mergedUser);
+    setUser(mergedUser);
+    return mergedUser;
+  }, []);
 
   const clearSession = useCallback(() => {
     storage.clearAuth();
@@ -24,8 +38,7 @@ export const AuthProvider = ({ children }) => {
 
     try {
       const currentUser = await getCurrentUser();
-      setUser(currentUser);
-      storage.setUser(currentUser);
+      syncUser(currentUser);
       return currentUser;
     } catch (error) {
       if (error?.status === 401) {
@@ -85,10 +98,15 @@ export const AuthProvider = ({ children }) => {
       setToken(newToken);
 
       if (newUser) {
-        storage.setUser(newUser);
-        setUser(newUser);
+        syncUser(newUser);
+        const key = `${LAST_LOGIN_KEY_PREFIX}${newUser.id || newUser.email || 'guest'}`;
+        localStorage.setItem(key, new Date().toISOString());
       } else {
-        await fetchCurrentUser();
+        const currentUser = await fetchCurrentUser();
+        if (currentUser) {
+          const key = `${LAST_LOGIN_KEY_PREFIX}${currentUser.id || currentUser.email || 'guest'}`;
+          localStorage.setItem(key, new Date().toISOString());
+        }
       }
 
       return { token: newToken, user: newUser };
@@ -106,8 +124,7 @@ export const AuthProvider = ({ children }) => {
       }
 
       if (newUser) {
-        storage.setUser(newUser);
-        setUser(newUser);
+        syncUser(newUser);
         return { token: newToken, user: newUser };
       }
 
@@ -144,8 +161,9 @@ export const AuthProvider = ({ children }) => {
       logout,
       register,
       refreshUser: fetchCurrentUser,
+      syncUser,
     }),
-    [fetchCurrentUser, loading, login, logout, register, token, user],
+    [fetchCurrentUser, loading, login, logout, register, syncUser, token, user],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

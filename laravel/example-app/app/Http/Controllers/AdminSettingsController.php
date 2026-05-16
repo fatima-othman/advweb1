@@ -56,7 +56,7 @@ class AdminSettingsController extends Controller
             'profile.password' => [
                 'nullable',
                 'string',
-                $settings['security']['require_strong_passwords'] ? Password::min(8)->mixedCase()->numbers() : Password::min(8),
+                $settings['security']['require_strong_passwords'] ? Password::min(8)->mixedCase()->symbols() : Password::min(8),
                 'confirmed',
             ],
             'platform.default_credits' => ['sometimes', 'integer', 'min:0', 'max:1000000'],

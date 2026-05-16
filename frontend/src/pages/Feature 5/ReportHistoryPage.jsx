@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react";
-import axios from "axios";
-import { API_BASE_URL } from "../../services/api";
+import api from "../../services/api";
 
 import TopActionBar from "../../components/TopActionBar";
 import Breadcrumbs from "../../components/Breadcrumbs";
@@ -47,9 +46,7 @@ function ReportHistoryPage({
 
   const fetchReports = async () => {
     try {
-      const response = await axios.get(
-        `${API_BASE_URL}/reports`
-      );
+      const response = await api.get('/reports');
 
       setReports(response.data);
     } catch (error) {
@@ -307,7 +304,7 @@ function ReportHistoryPage({
                       subtitle: `${report.project?.name} • ${report.type}`,
                     });
 
-                    navigate("/report-details");
+                    navigate(`/reports/${report.id}/view`);
                   }}
                   className={`px-3 py-2 rounded-lg border text-sm transition ${
                     darkMode
