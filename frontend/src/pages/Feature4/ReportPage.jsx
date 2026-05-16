@@ -5,7 +5,7 @@ import Header from '../../components/Header.jsx'
 import Overview from './Overview.jsx'
 import Swot from './Swot.jsx'
 import Marketing from './Marketing.jsx'
-import SocialMedia from './SocialMedia.jsx'
+import Kpi from './Kpi.jsx'
 import Pricing from './Pricing.jsx'
 import Growth from './Growth.jsx'
 import Risk from './Risk.jsx'
@@ -19,6 +19,123 @@ const fallbackReport = {
   employees: 5,
   budget: 2500,
   created_at: new Date().toISOString(),
+}
+
+const sectionLabels = {
+  overview: 'Overview',
+  swot: 'SWOT Analysis',
+  marketing: 'Marketing Plan',
+  pricing: 'Pricing Strategy',
+  growth: 'Growth Roadmap',
+  risk: 'Risk Analysis',
+  kpi: 'KPI Recommendations',
+}
+
+const bundleSections = ['swot', 'pricing', 'risk', 'kpi', 'marketing', 'growth']
+
+function normalizeSectionId(sectionId) {
+  return sectionId
+}
+
+function formatMissing(value) {
+  return value || 'Not specified'
+}
+
+function formatBudget(value) {
+  if (!value) return 'Not specified'
+
+  const budgetText = String(value).trim()
+  if (!budgetText) return 'Not specified'
+
+  return budgetText.startsWith('$') ? budgetText : `$${budgetText}`
+}
+
+function GeneratedSection({ title, content }) {
+  const lines = String(content || '')
+    .split('\n')
+    .flatMap((line) => {
+      const parts = line
+        .split(/(?=\b(?:Phase\s+\d+|Strengths|Weaknesses|Opportunities|Threats|Impact|Response|Goal|Tasks|Recommended KPIs|KPIs?):)/gi)
+        .map((part) => part.trim())
+        .filter(Boolean)
+
+      return parts.length > 1 ? parts : line
+    })
+    .map((line) => line.trim())
+    .filter(Boolean)
+
+  const blocks = []
+  let listItems = []
+
+  const flushList = () => {
+    if (listItems.length > 0) {
+      blocks.push({ type: 'list', items: listItems })
+      listItems = []
+    }
+  }
+
+  lines.forEach((line) => {
+    const bulletMatch = line.match(/^[-*]\s+(.+)/)
+    if (bulletMatch) {
+      listItems.push(bulletMatch[1])
+      return
+    }
+
+    flushList()
+
+    const headingMatch = line.match(/^([^:]{3,42}):\s*(.*)$/)
+    if (headingMatch) {
+      const [, heading, rest] = headingMatch
+      blocks.push({ type: 'heading', text: heading })
+      if (rest) {
+        blocks.push({ type: 'paragraph', text: rest })
+      }
+      return
+    }
+
+    blocks.push({ type: 'paragraph', text: line })
+  })
+
+  flushList()
+
+  return (
+    <div>
+      <h2 className="section-heading">{title}</h2>
+
+      {blocks.length > 0 ? (
+        <div className="generated-section-content">
+          {blocks.map((block, index) => {
+            if (block.type === 'heading') {
+              return <h3 key={`${title}-${index}`}>{block.text}</h3>
+            }
+
+            if (block.type === 'list') {
+              return (
+                <ul key={`${title}-${index}`}>
+                  {block.items.map((item, itemIndex) => (
+                    <li key={`${title}-${index}-${itemIndex}`}>{item}</li>
+                  ))}
+                </ul>
+              )
+            }
+
+            return <p key={`${title}-${index}`}>{block.text}</p>
+          })}
+        </div>
+      ) : (
+        <p>No generated content available for this section.</p>
+      )}
+    </div>
+  )
+}
+
+function EmptySection({ title }) {
+  return (
+    <div className="empty-report-section">
+      <h2 className="section-heading">{title}</h2>
+      <p>No generated data available for this section.</p>
+    </div>
+  )
 }
 
 function ReportPage() {
@@ -49,8 +166,30 @@ function ReportPage() {
 
   const project = report.project || report
   const businessType = project.business_type || project.type || 'Business'
-  const reportTitle = `${businessType} Strategy Report`
+  const projectName = project.name || report.company_name || report.title || 'Business'
+  const headerBusinessType = businessType
+  const reportTitle = report.title || `${projectName} Strategy Report`
   const reportDate = new Date(report.created_at).toLocaleDateString()
+  const reportSections = report.sections && typeof report.sections === 'object' && !Array.isArray(report.sections)
+    ? report.sections
+    : {}
+  const hasGeneratedReportSections = Object.keys(reportSections).length > 0
+  const selectedSectionIds = (Array.isArray(report.selected_sections) && report.selected_sections.length > 0
+    ? report.selected_sections.includes('bundle') ? bundleSections : report.selected_sections
+    : Object.keys(reportSections)
+  )
+    .map(normalizeSectionId)
+    .filter((sectionId) => sectionLabels[sectionId] && reportSections[sectionId])
+
+  const visibleSections = selectedSectionIds.map((sectionId) => ({
+    id: sectionId,
+    label: sectionLabels[sectionId],
+  }))
+  const printSections = [
+    { id: 'overview', label: sectionLabels.overview },
+    ...visibleSections.filter((section) => section.id !== 'overview'),
+  ]
+  const displayedActiveSection = activeSection
 
   const overviewData = {
     section_title: 'Overview',
@@ -66,19 +205,19 @@ function ReportPage() {
         },
 
         {
-          value: project.stage || 'Not specified',
+          value: formatMissing(project.stage),
           title: 'Stage',
           note: 'Business stage',
         },
 
         {
-          value: project.employees || 'Not specified',
+          value: formatMissing(project.employees),
           title: 'Employees',
           note: 'Team size',
         },
 
         {
-          value: project.budget || 'Not specified',
+          value: formatBudget(project.budget),
           title: 'Budget',
           note: 'Available budget',
         },
@@ -102,7 +241,7 @@ function ReportPage() {
 
       opportunities: [
         'Growing coffee market',
-        'High social media engagement',
+        'Strong local customer interest',
       ],
 
       threats: [
@@ -121,8 +260,8 @@ function ReportPage() {
 
       campaigns: [
         {
-          title: 'Instagram Campaign',
-          idea: 'Post daily coffee content and customer stories',
+          title: 'Local Awareness Campaign',
+          idea: 'Share customer stories and opening offers through local channels',
           goal: 'Increase engagement and attract local customers',
         },
 
@@ -141,30 +280,36 @@ function ReportPage() {
     },
   }
 
-  const socialMediaData = {
-    section_title: 'Social Media Plan',
+  const kpiData = {
+    section_title: 'KPI Recommendations',
 
     content: {
       intro:
-        'This social media plan focuses on increasing engagement and attracting new customers through consistent posting.',
+        'These KPIs help track business performance and guide the next strategy decisions.',
 
-      schedule: [
+      items: [
         {
-          day: 'Monday',
-          platform: 'Instagram',
-          content: 'Coffee preparation reel',
+          title: 'Monthly Revenue',
+          value: '$8,000',
+          note: 'Track total sales every month',
         },
 
         {
-          day: 'Wednesday',
-          platform: 'Facebook',
-          content: 'Customer testimonials and reviews',
+          title: 'Customer Retention',
+          value: '35%',
+          note: 'Measure repeat customers',
         },
 
         {
-          day: 'Friday',
-          platform: 'TikTok',
-          content: 'Behind the scenes coffee making video',
+          title: 'Average Order Value',
+          value: '$12',
+          note: 'Monitor spend per customer',
+        },
+
+        {
+          title: 'Conversion Rate',
+          value: '10%',
+          note: 'Track visitor-to-customer conversion',
         },
       ],
     },
@@ -209,9 +354,9 @@ function ReportPage() {
           goal: 'Build brand awareness',
 
           tasks: [
-            'Launch Instagram page',
+            'Launch local awareness campaign',
+            'Define weekly KPI targets',
             'Create opening offers',
-            'Run local ads',
           ],
         },
 
@@ -282,32 +427,42 @@ function ReportPage() {
     }, 100)
   }
 
-  let currentSection = <Overview data={overviewData} />
+  const activeRawContent = reportSections[displayedActiveSection]
+  let currentSection = displayedActiveSection === 'overview' ? (
+    <Overview data={overviewData} />
+  ) : activeRawContent ? (
+    <GeneratedSection title={sectionLabels[displayedActiveSection]} content={activeRawContent} />
+  ) : hasGeneratedReportSections ? (
+    <EmptySection title={sectionLabels[displayedActiveSection] || 'Report Section'} />
+  ) : (
+    <Overview data={overviewData} />
+  )
 
-  if (activeSection === 'swot') {
+  if (!hasGeneratedReportSections && displayedActiveSection === 'swot') {
     currentSection = <Swot data={swotData} />
-  } else if (activeSection === 'marketing') {
+  } else if (!hasGeneratedReportSections && displayedActiveSection === 'marketing') {
     currentSection = <Marketing data={marketingData} />
-  } else if (activeSection === 'socialMedia') {
-    currentSection = <SocialMedia data={socialMediaData} />
-  } else if (activeSection === 'pricing') {
+  } else if (!hasGeneratedReportSections && displayedActiveSection === 'kpi') {
+    currentSection = <Kpi data={kpiData} />
+  } else if (!hasGeneratedReportSections && displayedActiveSection === 'pricing') {
     currentSection = <Pricing data={pricingData} />
-  } else if (activeSection === 'growth') {
+  } else if (!hasGeneratedReportSections && displayedActiveSection === 'growth') {
     currentSection = <Growth data={growthData} />
-  } else if (activeSection === 'risk') {
+  } else if (!hasGeneratedReportSections && displayedActiveSection === 'risk') {
     currentSection = <Risk data={riskData} />
   }
 
   return (
     <div className="report-app-shell">
       <Sidebar
-        activeSection={activeSection}
+        activeSection={displayedActiveSection}
         onSelect={setActiveSection}
       />
 
       <main className="report-app-main">
         <Header
           title={reportTitle}
+          businessType={headerBusinessType}
           date={reportDate}
           onExport={handlePdfClick}
         />
@@ -319,30 +474,46 @@ function ReportPage() {
         <section className="print-report" aria-hidden="true">
           <div className="print-report-header">
             <h1>{reportTitle}</h1>
+            <p>Business Type: {headerBusinessType}</p>
             <p>{reportDate}</p>
           </div>
 
-          <div className="print-section">
-            <Overview data={overviewData} />
-          </div>
-          <div className="print-section">
-            <Swot data={swotData} />
-          </div>
-          <div className="print-section">
-            <Marketing data={marketingData} />
-          </div>
-          <div className="print-section">
-            <SocialMedia data={socialMediaData} />
-          </div>
-          <div className="print-section">
-            <Pricing data={pricingData} />
-          </div>
-          <div className="print-section">
-            <Growth data={growthData} />
-          </div>
-          <div className="print-section">
-            <Risk data={riskData} />
-          </div>
+          {printSections.length > 1 ? printSections.map((section) => (
+            <div className="print-section" key={section.id}>
+              {section.id === 'overview' ? (
+                <Overview data={overviewData} />
+              ) : (
+                <GeneratedSection
+                  title={section.label}
+                  content={reportSections[section.id]}
+                />
+              )}
+            </div>
+          )) : (
+            <>
+              <div className="print-section">
+                <Overview data={overviewData} />
+              </div>
+              <div className="print-section">
+                <Swot data={swotData} />
+              </div>
+              <div className="print-section">
+                <Marketing data={marketingData} />
+              </div>
+              <div className="print-section">
+                <Kpi data={kpiData} />
+              </div>
+              <div className="print-section">
+                <Pricing data={pricingData} />
+              </div>
+              <div className="print-section">
+                <Growth data={growthData} />
+              </div>
+              <div className="print-section">
+                <Risk data={riskData} />
+              </div>
+            </>
+          )}
         </section>
       </main>
 
