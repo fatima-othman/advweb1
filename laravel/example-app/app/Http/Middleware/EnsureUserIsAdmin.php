@@ -24,10 +24,14 @@ class EnsureUserIsAdmin
             ->where('email', env('ADMIN_EMAIL', 'admin@strategai.com'))
             ->first();
 
-        $request->attributes->set('auth_user', $user);
-        if ($user) {
-            $request->setUserResolver(fn (): User => $user);
+        if (! $user || $user->role !== 'admin') {
+            return response()->json([
+                'message' => 'Forbidden.',
+            ], 403);
         }
+
+        $request->attributes->set('auth_user', $user);
+        $request->setUserResolver(fn (): User => $user);
 
         return $next($request);
     }

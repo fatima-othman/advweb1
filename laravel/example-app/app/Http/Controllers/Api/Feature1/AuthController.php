@@ -101,6 +101,14 @@ class AuthController extends Controller
                 'email' => ['The provided credentials are incorrect.'],
             ]);
         }
+
+        if (! $user->is_active) {
+            RateLimiter::hit($throttleKey, 60);
+            throw ValidationException::withMessages([
+                'email' => ['Your account is deactivated. Please contact the administrator.'],
+            ]);
+        }
+
         RateLimiter::clear($throttleKey);
 
         $token = $user->createToken('auth_token')->plainTextToken;

@@ -156,9 +156,13 @@ export default function Users() {
   }
 
   const handleToggleActive = async (user) => {
-    await updateUser(user.id, {
+    const updatedUser = await updateUser(user.id, {
       is_active: !user.is_active,
     })
+
+    if (updatedUser) {
+      fetchUsers()
+    }
   }
 
   const handleAddCredits = async () => {

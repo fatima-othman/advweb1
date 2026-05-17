@@ -48,10 +48,15 @@ class AdminAuthController extends Controller
             ['email' => $adminEmail],
             [
                 'name' => 'Admin',
+                'role' => 'admin',
                 'password' => Hash::make(Str::random(32)),
                 'credit_balance' => 0,
             ],
         );
+
+        if ($user->role !== 'admin') {
+            $user->forceFill(['role' => 'admin'])->save();
+        }
 
         return response()->json([
             'message' => 'Admin login successful.',

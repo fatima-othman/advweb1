@@ -4,9 +4,9 @@ namespace App\Http\Controllers;
 use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 use Illuminate\Validation\Rules\Password;
 
@@ -106,12 +106,12 @@ class AdminSettingsController extends Controller
 
     public static function getPlatformDefaults(): array
     {
-        return self::DEFAULT_SETTINGS['platform'];
+        return self::storedSettings()['platform'];
     }
 
     public static function requireStrongPasswords(): bool
     {
-        return (bool) self::DEFAULT_SETTINGS['security']['require_strong_passwords'];
+        return (bool) self::storedSettings()['security']['require_strong_passwords'];
     }
 
     private function updateProfile(User $user, array $profile): void
@@ -139,12 +139,23 @@ class AdminSettingsController extends Controller
 
     private function settings(): array
     {
-        return self::DEFAULT_SETTINGS;
+        return self::storedSettings();
     }
 
     private function saveSettings(array $settings): void
     {
-        // Settings are kept in memory for this local env-based admin setup.
+        Cache::forever(self::SETTINGS_KEY, array_replace_recursive(self::DEFAULT_SETTINGS, $settings));
+    }
+
+    private static function storedSettings(): array
+    {
+        $settings = Cache::get(self::SETTINGS_KEY, []);
+
+        if (! is_array($settings)) {
+            $settings = [];
+        }
+
+        return array_replace_recursive(self::DEFAULT_SETTINGS, $settings);
     }
 
     private function profilePayload(User $user): array

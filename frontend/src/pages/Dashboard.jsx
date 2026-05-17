@@ -330,23 +330,42 @@ export default function Dashboard() {
     }
   }
 
-  const handleSendNotice = () => {
+  const handleSendNotice = async () => {
     const message = noticeMessage.trim()
 
     if (!message) return
 
-    setLocalActivities((current) => [
-      {
-        id: `notice-${Date.now()}`,
-        title: 'Admin notice prepared',
-        detail: message,
-        time: 'Just now',
-      },
-      ...current,
-    ])
-    setNoticeMessage('')
-    setShowNoticeModal(false)
-    setShowNotifications(true)
+    setActionLoading(true)
+    setActionError('')
+
+    try {
+      const { data } = await api.post('/admin/notifications', {
+        title: 'Admin Notice',
+        message,
+        type: 'System',
+        audience: 'all',
+      })
+
+      setLocalActivities((current) => [
+        {
+          id: `notice-${data.notification?.id || Date.now()}`,
+          title: 'Notice sent to users',
+          detail: message,
+          time: 'Just now',
+        },
+        ...current,
+      ])
+      setNoticeMessage('')
+      setShowNoticeModal(false)
+      setShowNotifications(true)
+    } catch (requestError) {
+      setActionError(
+        requestError.response?.data?.message ||
+          'Unable to send the notice right now.',
+      )
+    } finally {
+      setActionLoading(false)
+    }
   }
 
   const openProjectModal = async () => {
@@ -1226,7 +1245,7 @@ export default function Dashboard() {
             <div className="mb-5 flex items-start justify-between">
               <div>
                 <h2 className="text-[24px] font-bold text-[#355872]">Send Notice</h2>
-                <p className="mt-1 text-sm text-[#7AAACE]">Prepare an internal dashboard notice.</p>
+                <p className="mt-1 text-sm text-[#7AAACE]">Send a notice to all user dashboards.</p>
               </div>
               <button onClick={() => setShowNoticeModal(false)} className="text-[#7AAACE]">
                 <X size={18} />
@@ -1242,11 +1261,11 @@ export default function Dashboard() {
 
             <button
               onClick={handleSendNotice}
-              disabled={!noticeMessage.trim()}
+              disabled={!noticeMessage.trim() || actionLoading}
               className="flex h-11 w-full items-center justify-center gap-2 rounded-xl bg-[#355872] font-medium text-white disabled:opacity-50"
             >
-              <Send size={16} />
-              Send Notice
+              {actionLoading ? <Loader2 size={16} className="animate-spin" /> : <Send size={16} />}
+              {actionLoading ? 'Sending...' : 'Send Notice'}
             </button>
           </div>
         </div>

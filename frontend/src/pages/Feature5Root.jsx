@@ -16,6 +16,12 @@ import { initialProjects } from '../data/projects';
 import fallbackReports from '../data/reports';
 
 const RECENTLY_VIEWED_KEY_PREFIX = 'strategai_recently_viewed_';
+const ADMIN_NOTIFICATION_READ_KEY_PREFIX = 'strategai_admin_notification_read_';
+const LOCAL_NOTIFICATIONS_KEY_PREFIX = 'strategai_local_notifications_';
+const DEFAULT_LOCAL_NOTIFICATIONS = [
+  { id: 'default-report-generated', title: 'Report generated', message: 'Q1 Growth Strategy was generated.', time: '2 min ago', isRead: false },
+  { id: 'default-project-updated', title: 'Project updated', message: 'Project details were updated.', time: '10 min ago', isRead: false },
+];
 
 const toFeature5Path = (path) => {
   if (!path || path === '/') return '/feature5/dashboard';
@@ -89,15 +95,16 @@ function Feature5Root() {
   const [showProfileMenu, setShowProfileMenu] = useState(false);
   const [recentlyViewed, setRecentlyViewed] = useState([]);
   const [totalDownloads, setTotalDownloads] = useState(0);
+  const [adminNotifications, setAdminNotifications] = useState([]);
+  const [readAdminNotificationIds, setReadAdminNotificationIds] = useState([]);
   const [projects, setProjects] = useState(initialProjects.map(normalizeProject));
   const [reports, setReports] = useState(fallbackReports.map(normalizeReport));
   const [newProject, setNewProject] = useState({ name: '', type: '', country: '' });
-  const [notifications, setNotifications] = useState([
-    { id: 1, title: 'Report generated', message: 'Q1 Growth Strategy was generated.', time: '2 min ago', isRead: false },
-    { id: 2, title: 'Project updated', message: 'Project details were updated.', time: '10 min ago', isRead: false },
-  ]);
+  const [notifications, setNotifications] = useState([]);
 
   const recentStorageKey = `${RECENTLY_VIEWED_KEY_PREFIX}${user?.id || user?.email || 'guest'}`;
+  const adminNotificationReadKey = `${ADMIN_NOTIFICATION_READ_KEY_PREFIX}${user?.id || user?.email || 'guest'}`;
+  const localNotificationsKey = `${LOCAL_NOTIFICATIONS_KEY_PREFIX}${user?.id || user?.email || 'guest'}`;
 
   useEffect(() => {
     const load = async () => {
@@ -128,6 +135,64 @@ function Feature5Root() {
       ...prev,
     ]);
   };
+
+  useEffect(() => {
+    try {
+      const raw = window.localStorage.getItem(localNotificationsKey);
+      const parsed = raw ? JSON.parse(raw) : DEFAULT_LOCAL_NOTIFICATIONS;
+      setNotifications(Array.isArray(parsed) ? parsed : DEFAULT_LOCAL_NOTIFICATIONS);
+    } catch {
+      setNotifications(DEFAULT_LOCAL_NOTIFICATIONS);
+    }
+  }, [localNotificationsKey]);
+
+  useEffect(() => {
+    window.localStorage.setItem(localNotificationsKey, JSON.stringify(notifications));
+  }, [localNotificationsKey, notifications]);
+
+  useEffect(() => {
+    try {
+      const parsed = JSON.parse(window.localStorage.getItem(adminNotificationReadKey) || '[]');
+      setReadAdminNotificationIds(Array.isArray(parsed) ? parsed.map(String) : []);
+    } catch {
+      setReadAdminNotificationIds([]);
+    }
+  }, [adminNotificationReadKey]);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    const loadAdminNotifications = async () => {
+      try {
+        const { data } = await api.get('/notifications', { skipAuthRedirect: true });
+        const rows = Array.isArray(data) ? data : data?.notifications || [];
+
+        if (!isMounted) return;
+
+        setAdminNotifications(
+          rows.map((item) => ({
+            id: item.id,
+            title: item.title || 'Notification',
+            message: item.message || '',
+            type: item.type || 'System',
+            time: item.time || item.created_at || item.updated_at || '',
+          })),
+        );
+      } catch {
+        if (isMounted) {
+          setAdminNotifications([]);
+        }
+      }
+    };
+
+    loadAdminNotifications();
+    const intervalId = window.setInterval(loadAdminNotifications, 30000);
+
+    return () => {
+      isMounted = false;
+      window.clearInterval(intervalId);
+    };
+  }, []);
 
   const addRecentItem = (item) => {
     setRecentlyViewed((prev) => {
@@ -229,8 +294,39 @@ function Feature5Root() {
     }
   }, [location.pathname, selectedProject, selectedReport]);
 
-  const unreadNotifications = notifications.filter((item) => !item.isRead).length;
-  const markAllNotificationsRead = () => setNotifications((prev) => prev.map((item) => ({ ...item, isRead: true })));
+  const displayedNotifications = useMemo(() => {
+    const readIds = new Set(readAdminNotificationIds);
+    const adminItems = adminNotifications.map((item) => ({
+      id: `admin-${item.id}`,
+      title: item.title,
+      message: item.message,
+      type: item.type,
+      time: item.time
+        ? new Date(item.time).toLocaleString('en-US', {
+            month: 'short',
+            day: 'numeric',
+            hour: 'numeric',
+            minute: '2-digit',
+          })
+        : 'Admin notice',
+      isRead: readIds.has(String(item.id)),
+      source: 'admin',
+    }));
+
+    return [...adminItems, ...notifications];
+  }, [adminNotifications, notifications, readAdminNotificationIds]);
+
+  const unreadNotifications = displayedNotifications.filter((item) => !item.isRead).length;
+  const markAllNotificationsRead = () => {
+    const nextReadIds = adminNotifications.map((item) => String(item.id));
+    window.localStorage.setItem(adminNotificationReadKey, JSON.stringify(nextReadIds));
+    setReadAdminNotificationIds(nextReadIds);
+    setNotifications((prev) => {
+      const nextNotifications = prev.map((item) => ({ ...item, isRead: true }));
+      window.localStorage.setItem(localNotificationsKey, JSON.stringify(nextNotifications));
+      return nextNotifications;
+    });
+  };
   const selectedReportObjects = reports.filter((report) => selectedReports.includes(report.id));
   const canCompare = selectedReportObjects.length === 2 && selectedReportObjects[0].projectId === selectedReportObjects[1].projectId;
 
@@ -635,15 +731,15 @@ function Feature5Root() {
   return (
     <div className={`min-h-screen ${pageBg} ${pageText} transition-colors duration-300`}>
       <Toast toast={toast} onClose={() => setToast(null)} darkMode={darkMode} />
-      <DashboardLayout darkMode={darkMode} mutedText={mutedText} showProfileMenu={showProfileMenu} setShowProfileMenu={setShowProfileMenu} setShowToast={setToast} navigate={navigate} NavButton={NavButton}>
+      <DashboardLayout darkMode={darkMode} mutedText={mutedText} showProfileMenu={showProfileMenu} setShowProfileMenu={setShowProfileMenu} setShowToast={setToast} navigate={navigate} NavButton={NavButton} showNotifications={showNotifications} setShowNotifications={setShowNotifications} unreadNotifications={unreadNotifications} notifications={displayedNotifications} markAllNotificationsRead={markAllNotificationsRead}>
         <Routes>
           <Route index element={<Navigate to="dashboard" replace />} />
-          <Route path="dashboard" element={<DashboardPage userName={user?.name || user?.email || 'there'} darkMode={darkMode} showNotifications={showNotifications} setShowNotifications={setShowNotifications} unreadNotifications={unreadNotifications} notifications={notifications} mutedText={mutedText} markAllNotificationsRead={markAllNotificationsRead} navigate={navigate} stats={[{ title: 'CREDIT BALANCE', value: Number(user?.credit_balance ?? 0), sub: 'Current balance', icon: 'CR', subColor: 'text-green-600' }, { title: 'TOTAL REPORTS', value: reports.length, sub: '+3 this week', icon: 'RP', subColor: 'text-green-600' }, { title: 'AVERAGE SCORE', value: averageScore == null ? '-' : `${averageScore}%`, sub: averageScore == null ? 'No scored reports yet' : `Based on ${reports.filter((r) => Number.isFinite(Number(r.score)) && Number(r.score) > 0).length} reports`, icon: 'SC', subColor: 'text-green-600' }, { title: 'TOTAL DOWNLOADS', value: totalDownloads, sub: 'PDF exports', icon: 'DL', subColor: 'text-gray-500' }]} panelBg={panelBg} topProject={topProject} weakestReport={weakestReport} totalActiveProjects={totalActiveProjects} dashboardChartData={[{ label: 'Jan', value: 68 }, { label: 'Feb', value: 74 }, { label: 'Mar', value: 81 }, { label: 'Apr', value: 89 }]} reportTypeChart={[{ label: 'Growth', value: 89 }, { label: 'Pricing', value: 84 }, { label: 'Marketing', value: 91 }]} recentlyViewed={recentlyViewed} reports={reports} setSelectedReport={setSelectedReport} addRecentItem={addRecentItem} openReportView={openReportView} activities={[]} />} />
+          <Route path="dashboard" element={<DashboardPage userName={user?.name || user?.email || 'there'} darkMode={darkMode} showNotifications={showNotifications} setShowNotifications={setShowNotifications} unreadNotifications={unreadNotifications} notifications={displayedNotifications} mutedText={mutedText} markAllNotificationsRead={markAllNotificationsRead} navigate={navigate} stats={[{ title: 'CREDIT BALANCE', value: Number(user?.credit_balance ?? 0), sub: 'Current balance', icon: 'CR', subColor: 'text-green-600' }, { title: 'TOTAL REPORTS', value: reports.length, sub: '+3 this week', icon: 'RP', subColor: 'text-green-600' }, { title: 'AVERAGE SCORE', value: averageScore == null ? '-' : `${averageScore}%`, sub: averageScore == null ? 'No scored reports yet' : `Based on ${reports.filter((r) => Number.isFinite(Number(r.score)) && Number(r.score) > 0).length} reports`, icon: 'SC', subColor: 'text-green-600' }, { title: 'TOTAL DOWNLOADS', value: totalDownloads, sub: 'PDF exports', icon: 'DL', subColor: 'text-gray-500' }]} panelBg={panelBg} topProject={topProject} weakestReport={weakestReport} totalActiveProjects={totalActiveProjects} dashboardChartData={[{ label: 'Jan', value: 68 }, { label: 'Feb', value: 74 }, { label: 'Mar', value: 81 }, { label: 'Apr', value: 89 }]} reportTypeChart={[{ label: 'Growth', value: 89 }, { label: 'Pricing', value: 84 }, { label: 'Marketing', value: 91 }]} recentlyViewed={recentlyViewed} reports={reports} setSelectedReport={setSelectedReport} addRecentItem={addRecentItem} openReportView={openReportView} activities={[]} />} />
           <Route path="projects" element={<Navigate to="/dashboard/projects" replace />} />
           <Route path="project-details" element={<ProjectDetailsPage />} />
           <Route path="report-details" element={<ReportDetailsPage />} />
           <Route path="reports/:reportId/view" element={<ReportDetailsPage />} />
-          <Route path="history" element={<ReportHistoryPage darkMode={darkMode} showNotifications={showNotifications} setShowNotifications={setShowNotifications} unreadNotifications={unreadNotifications} notifications={notifications} mutedText={mutedText} markAllNotificationsRead={markAllNotificationsRead} panelBg={panelBg} projects={projects} reportSearch={reportSearch} setReportSearch={setReportSearch} reportSort={reportSort} setReportSort={setReportSort} projectFilter={projectFilter} setProjectFilter={setProjectFilter} typeFilter={typeFilter} setTypeFilter={setTypeFilter} dateFilter={dateFilter} setDateFilter={setDateFilter} clearReportFilters={clearReportFilters} selectedReports={selectedReports} toggleReportSelection={toggleReportSelection} canCompare={canCompare} addNotification={addNotification} navigate={navigate} setSelectedReport={setSelectedReport} addRecentItem={addRecentItem} openReportView={openReportView} getReportStatus={getReportStatus} />} />
+          <Route path="history" element={<ReportHistoryPage darkMode={darkMode} showNotifications={showNotifications} setShowNotifications={setShowNotifications} unreadNotifications={unreadNotifications} notifications={displayedNotifications} mutedText={mutedText} markAllNotificationsRead={markAllNotificationsRead} panelBg={panelBg} projects={projects} reportSearch={reportSearch} setReportSearch={setReportSearch} reportSort={reportSort} setReportSort={setReportSort} projectFilter={projectFilter} setProjectFilter={setProjectFilter} typeFilter={typeFilter} setTypeFilter={setTypeFilter} dateFilter={dateFilter} setDateFilter={setDateFilter} clearReportFilters={clearReportFilters} selectedReports={selectedReports} toggleReportSelection={toggleReportSelection} canCompare={canCompare} addNotification={addNotification} navigate={navigate} setSelectedReport={setSelectedReport} addRecentItem={addRecentItem} openReportView={openReportView} getReportStatus={getReportStatus} />} />
           <Route path="comparison" element={<ComparisonPage />} />
           <Route path="settings" element={<SettingsPage TopActionBar={TopActionBar} darkMode={darkMode} setDarkMode={setDarkMode} panelBg={panelBg} mutedText={mutedText} showToast={showToast} addNotification={addNotification} fakeDownload={(title) => showToast('success', 'Export started', `${title} export is ready.`)} />} />
         </Routes>

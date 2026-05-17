@@ -33,6 +33,8 @@ class ProjectController extends Controller
             'type' => 'nullable|string',
         ]);
 
+        $platformDefaults = AdminSettingsController::getPlatformDefaults();
+
         $project = Project::create([
             'user_id' => $request->user()->id,
             'name' => $request->name,
@@ -43,7 +45,7 @@ class ProjectController extends Controller
             'budget' => $request->budget,
             'market' => $request->market ?? $request->country,
             'competitors' => $request->competitors,
-            'language' => $request->language ?? 'English',
+            'language' => $request->language ?? $platformDefaults['default_language'] ?? 'English',
         ]);
 
         return response()->json([

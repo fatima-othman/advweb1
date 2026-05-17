@@ -68,7 +68,11 @@ function TopActionBar({
             </div>
 
             <div className="max-h-[340px] overflow-y-auto">
-              {notifications.map((item) => (
+              {notifications.length === 0 ? (
+                <div className={`px-5 py-8 text-center text-sm ${mutedText}`}>
+                  No notifications yet.
+                </div>
+              ) : notifications.map((item) => (
                 <div
                   key={item.id}
                   className={`px-5 py-4 border-b last:border-b-0 ${

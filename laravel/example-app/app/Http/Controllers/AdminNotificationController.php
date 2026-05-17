@@ -31,12 +31,14 @@ class AdminNotificationController extends Controller
             'title' => ['required', 'string', 'max:255'],
             'message' => ['required', 'string'],
             'type' => ['nullable', Rule::in(['User', 'Report', 'Alert', 'System'])],
+            'audience' => ['nullable', Rule::in(['admin', 'all'])],
             'is_read' => ['sometimes', 'boolean'],
         ]);
 
         $notification = Notification::create([
             ...$validated,
             'type' => $validated['type'] ?? 'System',
+            'audience' => $validated['audience'] ?? 'all',
         ]);
 
         return response()->json([
@@ -50,6 +52,7 @@ class AdminNotificationController extends Controller
         $validated = $request->validate([
             'is_read' => ['sometimes', 'boolean'],
             'type' => ['sometimes', Rule::in(['User', 'Report', 'Alert', 'System'])],
+            'audience' => ['sometimes', Rule::in(['admin', 'all'])],
         ]);
 
         $notification->update($validated);
@@ -85,6 +88,7 @@ class AdminNotificationController extends Controller
             'title' => $notification->title,
             'message' => $notification->message,
             'type' => $notification->type ?: 'System',
+            'audience' => $notification->audience ?: 'admin',
             'status' => $notification->is_read ? 'Read' : 'Unread',
             'time' => optional($notification->created_at)->toISOString(),
         ];

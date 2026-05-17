@@ -21,6 +21,12 @@ class AdminUserController extends Controller
                         ->orWhere('email', 'like', "%{$search}%");
                 });
             })
+            ->when($status === 'active', function ($query): void {
+                $query->where('is_active', true);
+            })
+            ->when($status === 'inactive', function ($query): void {
+                $query->where('is_active', false);
+            })
             ->orderByDesc('created_at')
             ->get()
             ->map(fn (User $user): array => $this->transformUser($user))
@@ -57,8 +63,10 @@ class AdminUserController extends Controller
         $user = User::create([
             'name' => $validated['name'],
             'email' => $validated['email'],
+            'role' => $validated['role'] ?? 'user',
             'password' => $validated['password'],
             'credit_balance' => $validated['credits'] ?? $platformDefaults['default_credits'],
+            'is_active' => $validated['is_active'] ?? true,
         ]);
 
         return response()->json([
@@ -79,7 +87,7 @@ class AdminUserController extends Controller
         }
 
         if (array_key_exists('is_active', $validated)) {
-            // Current user schema does not store active/inactive status.
+            $user->is_active = $validated['is_active'];
         }
 
         $user->save();
@@ -100,8 +108,8 @@ class AdminUserController extends Controller
             'stripe_customer_id' => $user->stripe_customer_id,
             'projects_count' => $user->projects()->count(),
             'registration_date' => optional($user->created_at)->toDateString(),
-            'role' => strtolower($user->email) === strtolower(env('ADMIN_EMAIL', 'admin@strategai.com')) ? 'admin' : 'user',
-            'is_active' => true,
+            'role' => $user->role ?: (strtolower($user->email) === strtolower(env('ADMIN_EMAIL', 'admin@strategai.com')) ? 'admin' : 'user'),
+            'is_active' => (bool) $user->is_active,
         ];
     }
 }

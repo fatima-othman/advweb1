@@ -33,3 +33,4 @@ function Growth({ data }) {
 }
 
 export default Growth;
+إنشاء

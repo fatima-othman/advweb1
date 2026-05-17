@@ -1,4 +1,6 @@
 import Feature5Sidebar from '../components/Feature5Sidebar';
+import TopActionBar from '../components/TopActionBar';
+
 function DashboardLayout({
   children,
   darkMode,
@@ -8,6 +10,11 @@ function DashboardLayout({
   setShowToast,
   navigate,
   NavButton,
+  showNotifications,
+  setShowNotifications,
+  unreadNotifications,
+  notifications,
+  markAllNotificationsRead,
 }) {
   return (
     <div className="flex min-h-screen">
@@ -21,7 +28,19 @@ function DashboardLayout({
   showToast={setShowToast}
 />
 
-      <main className="flex-1 px-6 py-6 md:px-10">{children}</main>
+      <main className="flex-1 px-6 py-6 md:px-10">
+        <TopActionBar
+          darkMode={darkMode}
+          showNotifications={showNotifications}
+          setShowNotifications={setShowNotifications}
+          unreadNotifications={unreadNotifications}
+          notifications={notifications}
+          mutedText={mutedText}
+          markAllNotificationsRead={markAllNotificationsRead}
+          showNotificationsUI
+        />
+        {children}
+      </main>
     </div>
   );
 }

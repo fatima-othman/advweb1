@@ -29,3 +29,4 @@ function Marketing({ data }) {
 }
 
 export default Marketing;
+إنشاء

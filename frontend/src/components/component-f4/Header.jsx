@@ -1,8 +1,10 @@
-function Header({ title, date, onExport }) {
+
+function Header({ title, businessType, date, onExport }) {
   return (
     <header className="report-app-header">
-      <div>
+      <div className="report-header-copy">
         <h2>{title}</h2>
+        <p>Business Type: {businessType}</p>
         <p>{date}</p>
       </div>
 

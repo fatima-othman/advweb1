@@ -32,7 +32,10 @@ Route::post('/reset-password', [PasswordResetController::class, 'resetPassword']
 
 
 Route::get('/notifications', function () {
-    return Notification::latest()->get();
+    return Notification::query()
+        ->where('audience', 'all')
+        ->latest()
+        ->get();
 });
 
 Route::post('/notifications', function (Request $request) {

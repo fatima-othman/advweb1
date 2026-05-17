@@ -14,8 +14,10 @@ class User extends Authenticatable
     protected $fillable = [
         'name',
         'email',
+        'role',
         'password',
         'credit_balance',
+        'is_active',
         'stripe_customer_id',
         'stripe_payment_method_id',
         'auto_recharge_enabled',
@@ -32,6 +34,7 @@ class User extends Authenticatable
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
+            'is_active' => 'boolean',
             'auto_recharge_enabled' => 'boolean',
         ];
     }

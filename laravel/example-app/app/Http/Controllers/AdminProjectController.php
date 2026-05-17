@@ -25,8 +25,10 @@ class AdminProjectController extends Controller
             'language' => ['nullable', 'string', 'in:Arabic,English'],
         ]);
 
+        $platformDefaults = AdminSettingsController::getPlatformDefaults();
+
         $validated['business_type'] = $validated['business_type'] ?? $validated['industry'] ?? 'General';
-        $validated['language'] = $validated['language'] ?? 'English';
+        $validated['language'] = $validated['language'] ?? $platformDefaults['default_language'] ?? 'English';
         unset($validated['business_name'], $validated['industry']);
 
         $project = Project::create($validated);
