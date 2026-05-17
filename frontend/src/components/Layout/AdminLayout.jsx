@@ -15,7 +15,7 @@ export default function AdminLayout() {
       } catch {
         if (active) {
           clearAdminSession()
-          window.location.href = '/admin/login'
+          window.location.href = '/login'
         }
       }
     }

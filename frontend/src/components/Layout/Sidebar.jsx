@@ -24,7 +24,7 @@ export default function Sidebar() {
       // Clear local state even when the backend token is already invalid.
     } finally {
       clearAdminSession()
-      window.location.href = '/admin/login'
+      window.location.href = '/login'
     }
   }
 

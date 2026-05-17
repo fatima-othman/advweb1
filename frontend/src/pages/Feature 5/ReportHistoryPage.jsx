@@ -34,6 +34,7 @@ function ReportHistoryPage({
   getReportStatus,
   setSelectedReport,
   addRecentItem,
+  openReportView,
   selectedReports,
   toggleReportSelection,
 }) {
@@ -304,7 +305,7 @@ function ReportHistoryPage({
                       subtitle: `${report.project?.name} • ${report.type}`,
                     });
 
-                    navigate(`/reports/${report.id}/view`);
+                    openReportView(report.id);
                   }}
                   className={`px-3 py-2 rounded-lg border text-sm transition ${
                     darkMode

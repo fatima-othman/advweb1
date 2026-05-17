@@ -91,6 +91,42 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/user/me', [AuthController::class, 'me']);
     Route::put('/profile', [AuthController::class, 'updateProfile']);
     Route::post('/logout', [AuthController::class, 'logout']);
+    Route::post('/change-password', [AuthController::class, 'changePassword']);
+    Route::post('/reviews', function (Request $request) {
+        $validated = $request->validate([
+            'project_id' => ['required', 'integer', 'exists:projects,id'],
+            'rating' => ['required', 'integer', 'min:1', 'max:5'],
+            'text' => ['nullable', 'string'],
+        ]);
+
+        $project = \App\Models\Project::where('id', $validated['project_id'])
+            ->where('user_id', $request->user()->id)
+            ->firstOrFail();
+
+        $review = \App\Models\Review::updateOrCreate(
+            [
+                'user_id' => $request->user()->id,
+                'project_id' => $project->id,
+            ],
+            [
+                'rating' => $validated['rating'],
+                'status' => 'Pending',
+                'text' => $validated['text'] ?? "Rated {$project->name} with {$validated['rating']} stars.",
+            ],
+        );
+
+        \App\Models\Notification::create([
+            'title' => 'New project review',
+            'message' => "{$request->user()->name} rated \"{$project->name}\" {$review->rating}/5.",
+            'type' => 'User',
+            'is_read' => false,
+        ]);
+
+        return response()->json([
+            'message' => 'Review submitted successfully.',
+            'review' => $review,
+        ], 201);
+    });
 
     Route::apiResource('projects', Feature3ProjectController::class);
     Route::apiResource('reports', ApiReportController::class)->except(['index', 'show']);

@@ -24,6 +24,7 @@ function DashboardPage({
   reports,
   setSelectedReport,
   addRecentItem,
+  openReportView,
   activities,
   userName = "there",
 }) {
@@ -193,7 +194,7 @@ function DashboardPage({
                   title: latestReport.name || "Latest Report",
                   subtitle: `${latestReport.project?.name || latestReport.project || "Project"} • ${latestReport.type || "Strategy"}`,
                 });
-                navigate(`/reports/${latestReport.id}/view`);
+                openReportView(latestReport.id);
               }}
               disabled={!latestReport}
               className={`px-5 py-3 rounded-xl transition text-white ${

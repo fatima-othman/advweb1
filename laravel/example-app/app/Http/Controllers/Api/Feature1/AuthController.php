@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api\Feature1;
 
 use App\Http\Controllers\Controller;
+use App\Models\Notification;
 use App\Models\User;
 use App\Services\Feature2\BillingService;
 use Illuminate\Http\JsonResponse;
@@ -41,6 +42,13 @@ class AuthController extends Controller
             ],
         ]);
 
+        Notification::create([
+            'title' => 'New user registered',
+            'message' => "{$user->name} ({$user->email}) created a new account.",
+            'type' => 'User',
+            'is_read' => false,
+        ]);
+
         if (filled(config('services.stripe.secret'))) {
             try {
                 BillingService::make()->ensureStripeCustomer($user);
@@ -54,6 +62,13 @@ class AuthController extends Controller
         }
 
         $token = $user->createToken('auth_token')->plainTextToken;
+
+        Notification::create([
+            'title' => 'User logged in',
+            'message' => "{$user->name} ({$user->email}) logged in.",
+            'type' => 'User',
+            'is_read' => false,
+        ]);
 
         return response()->json([
             'message' => 'Registered successfully.',
@@ -163,8 +178,46 @@ class AuthController extends Controller
 
     public function logout(Request $request): JsonResponse
     {
+        $user = $request->user();
+
+        Notification::create([
+            'title' => 'User logged out',
+            'message' => "{$user->name} ({$user->email}) logged out.",
+            'type' => 'User',
+            'is_read' => false,
+        ]);
+
         $request->user()->currentAccessToken()?->delete();
 
         return response()->json(['message' => 'Logged out successfully.']);
+    }
+
+    public function changePassword(Request $request): JsonResponse
+    {
+        $data = $request->validate([
+            'current_password' => ['required', 'string'],
+            'new_password' => ['required', 'string', 'min:8', 'confirmed'],
+        ]);
+
+        if (! Hash::check($data['current_password'], $request->user()->password)) {
+            throw ValidationException::withMessages([
+                'current_password' => ['The current password is incorrect.'],
+            ]);
+        }
+
+        $request->user()->forceFill([
+            'password' => Hash::make($data['new_password']),
+        ])->save();
+
+        Notification::create([
+            'title' => 'Password changed',
+            'message' => "{$request->user()->name} ({$request->user()->email}) changed their password.",
+            'type' => 'Alert',
+            'is_read' => false,
+        ]);
+
+        return response()->json([
+            'message' => 'Password changed successfully.',
+        ]);
     }
 }

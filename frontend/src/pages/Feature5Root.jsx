@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Link, Navigate, Route, Routes, useLocation, useNavigate } from 'react-router-dom';
+import { Link, Navigate, Route, Routes, useLocation, useNavigate, useParams } from 'react-router-dom';
 import Breadcrumbs from '../components/Breadcrumbs';
 import ComparisonCard from '../components/ComparisonCard';
 import SectionTitle from '../components/SectionTitle';
@@ -65,6 +65,7 @@ function Feature5Root() {
   const location = useLocation();
   const navigateBase = useNavigate();
   const navigate = (path, options) => navigateBase(toFeature5Path(path), options);
+  const openReportView = (reportId) => navigateBase(`/reports/${reportId}/view`);
 
   const [selectedReports, setSelectedReports] = useState([]);
   const [selectedProject, setSelectedProject] = useState(null);
@@ -332,7 +333,7 @@ function Feature5Root() {
             key={report.id}
             onClick={() => {
               setSelectedReport(report);
-              navigate(`/reports/${report.id}/view`);
+              navigate(`/report-details?id=${report.id}`);
             }}
             className="w-full text-left border-b last:border-b-0 py-4"
           >
@@ -345,17 +346,19 @@ function Feature5Root() {
   );
 
   const ReportDetailsPage = () => {
+    const { reportId } = useParams();
     const reportIdFromQuery = new URLSearchParams(location.search).get('id');
-    const reportFromQuery = reportIdFromQuery
-      ? reports.find((report) => String(report.id) === String(reportIdFromQuery))
+    const requestedReportId = reportId || reportIdFromQuery;
+    const reportFromRoute = requestedReportId
+      ? reports.find((report) => String(report.id) === String(requestedReportId))
       : null;
-    const activeReport = selectedReport || reportFromQuery || null;
+    const activeReport = selectedReport || reportFromRoute || null;
 
     useEffect(() => {
-      if (!selectedReport && reportFromQuery) {
-        setSelectedReport(reportFromQuery);
+      if (!selectedReport && reportFromRoute) {
+        setSelectedReport(reportFromRoute);
       }
-    }, [selectedReport, reportFromQuery]);
+    }, [selectedReport, reportFromRoute]);
 
     if (!activeReport) return <div className={`border rounded-2xl p-10 text-center ${panelBg} ${mutedText}`}>No report selected yet.</div>;
     const writtenSections = Object.entries(activeReport.section_content || {});
@@ -635,11 +638,12 @@ function Feature5Root() {
       <DashboardLayout darkMode={darkMode} mutedText={mutedText} showProfileMenu={showProfileMenu} setShowProfileMenu={setShowProfileMenu} setShowToast={setToast} navigate={navigate} NavButton={NavButton}>
         <Routes>
           <Route index element={<Navigate to="dashboard" replace />} />
-          <Route path="dashboard" element={<DashboardPage userName={user?.name || user?.email || 'there'} darkMode={darkMode} showNotifications={showNotifications} setShowNotifications={setShowNotifications} unreadNotifications={unreadNotifications} notifications={notifications} mutedText={mutedText} markAllNotificationsRead={markAllNotificationsRead} navigate={navigate} stats={[{ title: 'CREDIT BALANCE', value: Number(user?.credit_balance ?? 0), sub: 'Current balance', icon: 'CR', subColor: 'text-green-600' }, { title: 'TOTAL REPORTS', value: reports.length, sub: '+3 this week', icon: 'RP', subColor: 'text-green-600' }, { title: 'AVERAGE SCORE', value: averageScore == null ? '-' : `${averageScore}%`, sub: averageScore == null ? 'No scored reports yet' : `Based on ${reports.filter((r) => Number.isFinite(Number(r.score)) && Number(r.score) > 0).length} reports`, icon: 'SC', subColor: 'text-green-600' }, { title: 'TOTAL DOWNLOADS', value: totalDownloads, sub: 'PDF exports', icon: 'DL', subColor: 'text-gray-500' }]} panelBg={panelBg} topProject={topProject} weakestReport={weakestReport} totalActiveProjects={totalActiveProjects} dashboardChartData={[{ label: 'Jan', value: 68 }, { label: 'Feb', value: 74 }, { label: 'Mar', value: 81 }, { label: 'Apr', value: 89 }]} reportTypeChart={[{ label: 'Growth', value: 89 }, { label: 'Pricing', value: 84 }, { label: 'Marketing', value: 91 }]} recentlyViewed={recentlyViewed} reports={reports} setSelectedReport={setSelectedReport} addRecentItem={addRecentItem} activities={[]} />} />
+          <Route path="dashboard" element={<DashboardPage userName={user?.name || user?.email || 'there'} darkMode={darkMode} showNotifications={showNotifications} setShowNotifications={setShowNotifications} unreadNotifications={unreadNotifications} notifications={notifications} mutedText={mutedText} markAllNotificationsRead={markAllNotificationsRead} navigate={navigate} stats={[{ title: 'CREDIT BALANCE', value: Number(user?.credit_balance ?? 0), sub: 'Current balance', icon: 'CR', subColor: 'text-green-600' }, { title: 'TOTAL REPORTS', value: reports.length, sub: '+3 this week', icon: 'RP', subColor: 'text-green-600' }, { title: 'AVERAGE SCORE', value: averageScore == null ? '-' : `${averageScore}%`, sub: averageScore == null ? 'No scored reports yet' : `Based on ${reports.filter((r) => Number.isFinite(Number(r.score)) && Number(r.score) > 0).length} reports`, icon: 'SC', subColor: 'text-green-600' }, { title: 'TOTAL DOWNLOADS', value: totalDownloads, sub: 'PDF exports', icon: 'DL', subColor: 'text-gray-500' }]} panelBg={panelBg} topProject={topProject} weakestReport={weakestReport} totalActiveProjects={totalActiveProjects} dashboardChartData={[{ label: 'Jan', value: 68 }, { label: 'Feb', value: 74 }, { label: 'Mar', value: 81 }, { label: 'Apr', value: 89 }]} reportTypeChart={[{ label: 'Growth', value: 89 }, { label: 'Pricing', value: 84 }, { label: 'Marketing', value: 91 }]} recentlyViewed={recentlyViewed} reports={reports} setSelectedReport={setSelectedReport} addRecentItem={addRecentItem} openReportView={openReportView} activities={[]} />} />
           <Route path="projects" element={<Navigate to="/dashboard/projects" replace />} />
           <Route path="project-details" element={<ProjectDetailsPage />} />
           <Route path="report-details" element={<ReportDetailsPage />} />
-          <Route path="history" element={<ReportHistoryPage darkMode={darkMode} showNotifications={showNotifications} setShowNotifications={setShowNotifications} unreadNotifications={unreadNotifications} notifications={notifications} mutedText={mutedText} markAllNotificationsRead={markAllNotificationsRead} panelBg={panelBg} projects={projects} reportSearch={reportSearch} setReportSearch={setReportSearch} reportSort={reportSort} setReportSort={setReportSort} projectFilter={projectFilter} setProjectFilter={setProjectFilter} typeFilter={typeFilter} setTypeFilter={setTypeFilter} dateFilter={dateFilter} setDateFilter={setDateFilter} clearReportFilters={clearReportFilters} selectedReports={selectedReports} toggleReportSelection={toggleReportSelection} canCompare={canCompare} addNotification={addNotification} navigate={navigate} setSelectedReport={setSelectedReport} addRecentItem={addRecentItem} getReportStatus={getReportStatus} />} />
+          <Route path="reports/:reportId/view" element={<ReportDetailsPage />} />
+          <Route path="history" element={<ReportHistoryPage darkMode={darkMode} showNotifications={showNotifications} setShowNotifications={setShowNotifications} unreadNotifications={unreadNotifications} notifications={notifications} mutedText={mutedText} markAllNotificationsRead={markAllNotificationsRead} panelBg={panelBg} projects={projects} reportSearch={reportSearch} setReportSearch={setReportSearch} reportSort={reportSort} setReportSort={setReportSort} projectFilter={projectFilter} setProjectFilter={setProjectFilter} typeFilter={typeFilter} setTypeFilter={setTypeFilter} dateFilter={dateFilter} setDateFilter={setDateFilter} clearReportFilters={clearReportFilters} selectedReports={selectedReports} toggleReportSelection={toggleReportSelection} canCompare={canCompare} addNotification={addNotification} navigate={navigate} setSelectedReport={setSelectedReport} addRecentItem={addRecentItem} openReportView={openReportView} getReportStatus={getReportStatus} />} />
           <Route path="comparison" element={<ComparisonPage />} />
           <Route path="settings" element={<SettingsPage TopActionBar={TopActionBar} darkMode={darkMode} setDarkMode={setDarkMode} panelBg={panelBg} mutedText={mutedText} showToast={showToast} addNotification={addNotification} fakeDownload={(title) => showToast('success', 'Export started', `${title} export is ready.`)} />} />
         </Routes>

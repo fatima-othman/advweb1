@@ -202,7 +202,7 @@ export default function Settings() {
   const handleLogoutAll = async () => {
     await saveSettings('logout_all', { security_action: 'logout_all' })
     clearAdminSession()
-    window.location.href = '/admin/login'
+    window.location.href = '/login'
   }
 
   return (
